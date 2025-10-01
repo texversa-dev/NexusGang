@@ -3,10 +3,10 @@ import requests
 from flask import Flask, redirect, request, session, url_for, render_template_string, jsonify
 from flask_sqlalchemy import SQLAlchemy
 
-# --- CONFIGURATION (CRITICAL) ---
+# --- CONFIGURATION (FINAL) ---
 CLIENT_ID = "1416882044696395926" 
 CLIENT_SECRET = "7vgeQMvrlYzBLLaBeDma8QBU6Qa7LW0a" 
-# This MUST match the URI registered in the Discord Developer Portal
+# This MUST match the URI registered in the Discord Developer Portal.
 REDIRECT_URI = "https://nexuserlc.xyz/" 
 
 OAUTH_SCOPES = "identify guilds" 
@@ -16,6 +16,7 @@ ADMINISTRATOR = 0x8
 MANAGE_GUILD = 0x20       
 
 app = Flask(__name__)
+# WARNING: Change this key for production security!
 app.secret_key = os.urandom(24) 
 
 # --- DATABASE CONFIGURATION ---
@@ -68,8 +69,8 @@ def fetch_manageable_guilds(access_token):
 @app.route("/")
 def index_and_callback():
     """
-    Handles the index page, the login redirect, AND the OAuth2 callback.
-    No separate /login route exists.
+    Handles the index page AND the OAuth2 callback.
+    This route is configured to avoid any unnecessary /login redirects.
     """
     code = request.args.get("code")
 
@@ -86,6 +87,7 @@ def index_and_callback():
             token_data = r.json()
             
             session['access_token'] = token_data['access_token']
+            # Success: Redirect to dashboard
             return redirect(url_for('dashboard'))
         except requests.exceptions.HTTPError as e:
             return f"Discord OAuth Error: {e.response.text}", 500
@@ -94,7 +96,7 @@ def index_and_callback():
     if 'access_token' in session:
         return redirect(url_for('dashboard'))
     
-    # Show login prompt, linking directly to Discord's OAuth URL
+    # Show login prompt, linking DIRECTLY to Discord's OAuth URL
     return f"""
         <header style="background-color: #2C2F33; color: white; padding: 20px; text-align: center;">
             <h1>Nexus Dashboard</h1>
@@ -148,6 +150,7 @@ def dashboard():
             html_content = html_content.replace('id="dashboard-sidebar" style="display: none;"', 'id="dashboard-sidebar"')
             html_content = html_content.replace('id="dashboard-content" style="display: none;"', 'id="dashboard-content"')
             
+            # Inject the ID of the first server for initial load
             html_content = html_content.replace(
                 '// INITIAL SETUP START',
                 f"let initialGuildId = '{first_guild_id}';"
