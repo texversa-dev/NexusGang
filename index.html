@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE TML>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -132,6 +132,9 @@
         const SCOPES = 'identify%20guilds'; // Scopes needed: user info and guild list
         const DISCORD_AUTH_URL = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=${SCOPES}`;
 
+        // Session storage key for persistent mock login state
+        const SESSION_KEY = 'discord_mock_session'; 
+
         // In a real application, __app_id and __firebase_config would be injected by the environment.
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
@@ -149,7 +152,7 @@
         const detailGuildId = document.getElementById('detailGuildId');
         const loginMessage = document.getElementById('loginMessage');
 
-        let isAuthenticated = false; // State is now managed by checking for the 'code' parameter on load.
+        let isAuthenticated = false;
 
         // --- Mock Data Functions (These remain for UI testing) ---
 
@@ -183,6 +186,29 @@
                 setTimeout(() => resolve(MOCK_GUILDS), 1000); // Simulate network delay
             });
         }
+        
+        // --- SECURE BACKEND MOCK (Demonstrating Real OAuth Flow) ---
+        
+        /**
+         * !!! MOCK BACKEND FUNCTION !!!
+         * In a real application, this function would send the 'code' to your secure backend server.
+         * The server would then:
+         * 1. Exchange the 'code' for an Access Token with Discord's API using your Client Secret (this MUST NOT happen in the frontend).
+         * 2. Use the Access Token to fetch user and guild data.
+         * 3. Create a secure session (e.g., set a server-generated cookie/token) and return success.
+         * @param {string} code - The authorization code from Discord.
+         */
+        function mockExchangeTokenWithBackend(code) {
+            return new Promise((resolve) => {
+                // Simulate the backend processing time
+                setTimeout(() => {
+                    // Simulate success and return the mock user data
+                    console.log(`[BACKEND MOCK]: Successfully exchanged Discord code: ${code}. Session created.`);
+                    resolve({ success: true, user: { id: 'mockUserId', username: 'MockUser' } });
+                }, 500);
+            });
+        }
+
 
         // --- Core UI Management Functions ---
 
@@ -202,6 +228,7 @@
          */
         function logout() {
             isAuthenticated = false;
+            sessionStorage.removeItem(SESSION_KEY); // Clear session storage for persistence
             // Clear the URL of any remaining OAuth parameters before resetting the view
             window.history.replaceState(null, '', window.location.pathname);
             showLogin();
@@ -234,7 +261,7 @@
         /**
          * Checks for a Discord OAuth 'code' parameter in the URL and handles the callback.
          */
-        function handleDiscordCallback() {
+        async function handleDiscordCallback() {
             const urlParams = new URLSearchParams(window.location.search);
             const code = urlParams.get('code');
             const error = urlParams.get('error');
@@ -245,35 +272,46 @@
                 document.getElementById('loginButton').classList.add('hidden');
 
                 if (code) {
-                    // Authorization Code Received - This is where the backend would take over
+                    // Authorization Code Received - This is where the secure flow begins
                     loginMessage.innerHTML = `
-                        <p class="text-lg font-bold text-green-400">Authorization Successful! (Frontend Step Complete)</p>
+                        <p class="text-lg font-bold text-green-400">Authorization Code Received!</p>
                         <div class="mt-4 p-4 rounded-lg bg-red-800/50 border border-red-600 text-left">
-                            <p class="font-bold text-red-300">CRITICAL: BACKEND REQUIRED</p>
-                            <p class="text-sm text-red-200">The Discord Authorization Code has been received. This single-file frontend **cannot** securely exchange it for an Access Token, but we are loading the mock dashboard now for preview purposes.</p>
+                            <p class="font-bold text-red-300">SERVER-SIDE PROCESS REQUIRED:</p>
+                            <p class="text-sm text-red-200">The Discord Code is now being sent to the **Mock Backend** for secure token exchange. This single-file frontend **cannot** perform this step securely.</p>
                         </div>
                         <p class="mt-4 text-lg font-bold text-textlight">Loading Dashboard Mockup...</p>
                     `;
-                    // Automatically force the mock login and show the dashboard
-                    setTimeout(() => {
+                    loginView.classList.remove('hidden');
+
+                    try {
+                        // Wait for the mock backend call
+                        await mockExchangeTokenWithBackend(code);
+
+                        // If successful (mock), save the session state and load dashboard
+                        sessionStorage.setItem(SESSION_KEY, 'logged_in'); 
                         forceMockLoginAndShowDashboard();
-                        // Clear the URL of the 'code' parameter after loading the dashboard mock
+
+                        // Clear the URL of the 'code' parameter after processing
                         window.history.replaceState(null, '', window.location.pathname);
-                    }, 1000); // 1 second delay to show the success message
+
+                    } catch (e) {
+                        console.error("Mock Backend Error:", e);
+                        loginMessage.textContent = `Login failed due to mock backend error. Please try again.`;
+                        sessionStorage.removeItem(SESSION_KEY);
+                    }
+
                 } else if (error) {
                     // Error during authorization
                     loginMessage.textContent = `Login failed. Discord error: ${error}. Please try again.`;
                 }
                 
-                // Keep the login view visible (or show message during delay)
-                loginView.classList.remove('hidden');
-                return true;
+                return true; // We handled the callback parameters
             }
-            return false;
+            return false; // No callback parameters present
         }
 
         /**
-         * FOR DEVELOPMENT/MOCK TESTING ONLY: Skips the token exchange and loads the mock data.
+         * FOR DEVELOPMENT/MOCK TESTING ONLY: Loads the dashboard mock data.
          */
         function forceMockLoginAndShowDashboard() {
             isAuthenticated = true;
@@ -394,9 +432,16 @@
         // --- Initialization ---
 
         window.onload = () => {
-             // Check if we are returning from Discord OAuth flow
+             // 1. Check for existing session first
+             if (sessionStorage.getItem(SESSION_KEY) === 'logged_in') {
+                console.log("Session found. Skipping login flow and loading dashboard.");
+                forceMockLoginAndShowDashboard();
+                return;
+            }
+
+            // 2. If no session, check for Discord callback (first-time login)
              if (!handleDiscordCallback()) {
-                 // If not, show the standard login screen
+                 // 3. If no session and no callback params, show the standard login screen
                  showLogin();
              }
         };
