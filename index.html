@@ -3,39 +3,167 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Secure Login</title>
+    <title>NexusTeam - Dashboard Login</title>
     <style>
-        body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f4f4f9; }
-        .login-container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); width: 300px; }
-        h1 { text-align: center; color: #333; }
-        input[type="text"], input[type="password"] { 
-            width: 100%; padding: 10px; margin: 8px 0 15px 0; 
-            border: 1px solid #ccc; box-sizing: border-box; border-radius: 4px;
+        /* General Styling */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5; /* Light, modern background */
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
         }
-        button { 
-            background-color: #007bff; color: white; padding: 14px 20px; 
-            border: none; cursor: pointer; width: 100%; font-size: 1.1em;
+        
+        /* Login Container */
+        .login-container {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        /* Titles and Text */
+        h1 {
+            color: #1e88e5; /* Primary blue for branding */
+            margin-bottom: 5px;
+            font-size: 2em;
+        }
+        p.subtitle {
+            color: #757575;
+            margin-bottom: 30px;
+            font-size: 1em;
+        }
+
+        /* Form Inputs */
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            box-sizing: border-box; /* Include padding/border in the element's total width */
+            transition: border-color 0.3s;
+        }
+        input[type="text"]:focus, input[type="password"]:focus {
+            border-color: #1e88e5;
+            outline: none;
+        }
+
+        /* Button */
+        button {
+            background-color: #1e88e5;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1.1em;
+            font-weight: bold;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+        button:hover {
+            background-color: #1565c0;
+        }
+        button:active {
+            transform: scale(0.99);
+        }
+
+        /* Error Message */
+        .error-message {
+            color: #d32f2f; /* Red for errors */
+            background-color: #ffebee;
+            padding: 10px;
             border-radius: 4px;
+            margin-top: 20px;
+            font-weight: 500;
+            display: none; /* Hidden by default */
+        }
+        
+        /* Dashboard Styling (The destination page) */
+        .dashboard-content {
+            display: none; /* Hidden by default */
+            text-align: left;
+            padding: 20px;
+            background-color: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 8px;
+            margin-top: 30px;
         }
     </style>
 </head>
 <body>
-
     <div class="login-container">
-        <h1>Staff Login</h1>
-        
-        <form action="YOUR_SERVER_LOGIN_SCRIPT_HERE" method="POST">
-            <div>
-                <label for="username">Username:</label>
-                <input type="text" id="username" name="username" required>
-            </div>
-            <div>
-                <label for="password">Password:</label>
-                <input type="password" id="password" name="password" required>
-            </div>
-            <button type="submit">Log In</button>
-        </form>
+        <div id="loginArea">
+            <h1>NexusTeam | Staff Dashboard</h1>
+            <p class="subtitle">Enter your team credentials to access your management tools.</p>
+
+            <form id="loginForm">
+                <input type="text" id="username" placeholder="Username" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <button type="submit">Login</button>
+                
+                <p class="error-message" id="loginError">Invalid Username or Password.</p>
+            </form>
+        </div>
+
+        <div id="dashboardArea" class="dashboard-content">
+            <h2>Welcome, NexusTeam!</h2>
+            <hr>
+            <p><strong>Status:</strong> All Systems Operational.</p>
+            <p><strong>Today's Tasks:</strong> Review LOA Requests, Monitor Shift Logs, and complete the weekly analytics report.</p>
+            <p>This is your exclusive, secure team dashboard content.</p>
+            <button onclick="logout()">Logout</button>
+        </div>
     </div>
 
+    <script>
+        // REQUIRED CREDENTIALS
+        const REQUIRED_USERNAME = "NexusTeam";
+        const REQUIRED_PASSWORD = "Nexus";
+
+        const loginForm = document.getElementById('loginForm');
+        const loginError = document.getElementById('loginError');
+        const loginArea = document.getElementById('loginArea');
+        const dashboardArea = document.getElementById('dashboardArea');
+
+        // Handles the form submission
+        loginForm.addEventListener('submit', function(event) {
+            event.preventDefault(); // Stop the form from submitting normally
+            
+            const usernameInput = document.getElementById('username').value;
+            const passwordInput = document.getElementById('password').value;
+
+            // Check if credentials match
+            if (usernameInput === REQUIRED_USERNAME && passwordInput === REQUIRED_PASSWORD) {
+                // SUCCESS: Hide login, show dashboard
+                loginError.style.display = 'none';
+                loginArea.style.display = 'none';
+                dashboardArea.style.display = 'block';
+            } else {
+                // FAILURE: Show error message
+                loginError.style.display = 'block';
+                // Clear password field for security
+                document.getElementById('password').value = ''; 
+            }
+        });
+
+        // Handles the logout button
+        function logout() {
+            // Clear input fields
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            
+            // Hide dashboard, show login
+            dashboardArea.style.display = 'none';
+            loginArea.style.display = 'block';
+        }
+    </script>
 </body>
 </html>
