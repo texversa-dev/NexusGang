@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Login</title>
+    <style>
+        body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f4f4f9; }
+        .login-container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); width: 300px; }
+        h1 { text-align: center; color: #333; }
+        input[type="text"], input[type="password"] { 
+            width: 100%; padding: 10px; margin: 8px 0 15px 0; 
+            border: 1px solid #ccc; box-sizing: border-box; border-radius: 4px;
+        }
+        button { 
+            background-color: #007bff; color: white; padding: 14px 20px; 
+            border: none; cursor: pointer; width: 100%; font-size: 1.1em;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <h1>Staff Login</h1>
+        
+        <form action="YOUR_SERVER_LOGIN_SCRIPT_HERE" method="POST">
+            <div>
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div>
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit">Log In</button>
+        </form>
+    </div>
+
+</body>
+</html>
