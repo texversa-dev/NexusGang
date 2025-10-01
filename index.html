@@ -250,19 +250,22 @@
                         <p class="text-lg font-bold text-green-400">Authorization Successful! (Frontend Step Complete)</p>
                         <div class="mt-4 p-4 rounded-lg bg-red-800/50 border border-red-600 text-left">
                             <p class="font-bold text-red-300">CRITICAL: BACKEND REQUIRED</p>
-                            <p class="text-sm text-red-200">The Discord Authorization Code has been received, but it **MUST** be securely exchanged for an Access Token by a **Node.js/Python server** or similar backend. This frontend-only file cannot proceed to the dashboard securely.</p>
-                            <p class="text-xs text-red-200 mt-2">To continue testing the dashboard UI mock, please click "Force Mock Login" below.</p>
+                            <p class="text-sm text-red-200">The Discord Authorization Code has been received. This single-file frontend **cannot** securely exchange it for an Access Token, but we are loading the mock dashboard now for preview purposes.</p>
                         </div>
-                        <button class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg mt-4" onclick="forceMockLoginAndShowDashboard()">
-                            Force Mock Login
-                        </button>
+                        <p class="mt-4 text-lg font-bold text-textlight">Loading Dashboard Mockup...</p>
                     `;
+                    // Automatically force the mock login and show the dashboard
+                    setTimeout(() => {
+                        forceMockLoginAndShowDashboard();
+                        // Clear the URL of the 'code' parameter after loading the dashboard mock
+                        window.history.replaceState(null, '', window.location.pathname);
+                    }, 1000); // 1 second delay to show the success message
                 } else if (error) {
                     // Error during authorization
                     loginMessage.textContent = `Login failed. Discord error: ${error}. Please try again.`;
                 }
                 
-                // Keep the login view visible to display the message
+                // Keep the login view visible (or show message during delay)
                 loginView.classList.remove('hidden');
                 return true;
             }
