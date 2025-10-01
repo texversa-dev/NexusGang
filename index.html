@@ -64,8 +64,8 @@
             <div class="dashboard-card p-10 max-w-lg w-full">
                 <h2 class="text-3xl font-extrabold text-textlight mb-4">Access Your Server Dashboard</h2>
                 <p class="text-textmuted mb-8">Log in with Discord to manage your servers that have our bot installed.</p>
-                <!-- This button would redirect to Discord's OAuth2 authorization page -->
-                <button id="loginButton" class="bg-discord hover:bg-discorddark text-white font-bold py-3 px-6 rounded-lg shadow-xl transition duration-300 transform hover:scale-105 flex items-center justify-center mx-auto" onclick="mockDiscordLogin()">
+                <!-- This button now performs the real redirect to Discord's OAuth2 authorization page -->
+                <button id="loginButton" class="bg-discord hover:bg-discorddark text-white font-bold py-3 px-6 rounded-lg shadow-xl transition duration-300 transform hover:scale-105 flex items-center justify-center mx-auto" onclick="startDiscordLogin()">
                     <svg class="w-6 h-6 mr-3" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12.001 0C6.12 0 1.25 4.88 1.25 10.75V24H3.75V21.5H8.75V24H11.25V21.5H13.75V24H18.75V21.5H21.25V24H23.75V10.75C23.75 4.88 18.88 0 13.001 0H12.001ZM8.75 10.75C8.75 12.03 7.74 13.04 6.46 13.04C5.18 13.04 4.17 12.03 4.17 10.75C4.17 9.47 5.18 8.46 6.46 8.46C7.74 8.46 8.75 9.47 8.75 10.75ZM19.54 10.75C19.54 12.03 18.53 13.04 17.25 13.04C15.97 13.04 14.96 12.03 14.96 10.75C14.96 9.47 15.97 8.46 17.25 8.46C18.53 8.46 19.54 9.47 19.54 10.75Z"/>
                     </svg>
@@ -126,7 +126,8 @@
 
         // DISCORD OAUTH CONFIGURATION (Using the provided Client ID)
         const CLIENT_ID = '1416882044696395926';
-        // IMPORTANT: Replace this with the actual URL your backend uses to handle the Discord redirect!
+        // !!! CRITICAL: CHANGE THIS URI BEFORE PUBLISHING YOUR WEBSITE !!!
+        // It MUST match one of the authorized redirect URIs in your Discord Application settings.
         const REDIRECT_URI = 'http://localhost:3000/auth/discord/callback';
         const SCOPES = 'identify%20guilds'; // Scopes needed: user info and guild list
         const DISCORD_AUTH_URL = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=${SCOPES}`;
@@ -148,15 +149,9 @@
         const detailGuildId = document.getElementById('detailGuildId');
         const loginMessage = document.getElementById('loginMessage');
 
-        let isAuthenticated = false;
+        let isAuthenticated = false; // State is now managed by checking for the 'code' parameter on load.
 
-        // --- Mock Data Functions (Replace with REAL API Calls) ---
-
-        /**
-         * IMPORTANT: In a real application, these functions would fetch data from your
-         * secure server backend, which in turn communicates with the Discord API.
-         * The response is simulated here.
-         */
+        // --- Mock Data Functions (These remain for UI testing) ---
 
         const MOCK_BOT_STATS = {
             servers: 7890,
@@ -173,7 +168,6 @@
 
         /**
          * Simulates fetching global bot statistics.
-         * @returns {Promise<object>} Bot stats object.
          */
         function fetchBotStats() {
             return new Promise(resolve => {
@@ -183,7 +177,6 @@
 
         /**
          * Simulates fetching the list of servers the user is in and the bot is in.
-         * @returns {Promise<Array<object>>} List of user's guilds.
          */
         function fetchUserGuilds() {
             return new Promise(resolve => {
@@ -194,39 +187,23 @@
         // --- Core UI Management Functions ---
 
         /**
-         * Simulates the Discord OAuth2 login process.
-         * In a real app, this redirects the user to Discord.
+         * Starts the Discord OAuth2 login process by redirecting the user.
          */
-        function mockDiscordLogin() {
+        function startDiscordLogin() {
             loginMessage.textContent = "Redirecting to Discord authorization page...";
             document.getElementById('loginButton').disabled = true;
 
-            // In a real application, you would use:
-            // window.location.href = DISCORD_AUTH_URL;
-            console.log("--- DISCORD AUTHORIZATION URL (Use this in a real browser) ---");
-            console.log(DISCORD_AUTH_URL);
-            console.log("---------------------------------------------------------------");
-
-            // Mock the redirect and subsequent token exchange success
-            setTimeout(() => {
-                isAuthenticated = true;
-                loginMessage.textContent = "Mock login successful. Loading dashboard...";
-                document.getElementById('loginButton').disabled = false;
-                showLoading();
-                loadDashboardData();
-            }, 1500);
+            // This is the actual redirect that takes the user to Discord.
+            window.location.href = DISCORD_AUTH_URL;
         }
 
         /**
-         * Logs the user out.
+         * Logs the user out (resets the view).
          */
         function logout() {
             isAuthenticated = false;
-            // Clear any local tokens/session data here in a real app
-            loginView.classList.remove('hidden');
-            dashboardView.classList.add('hidden');
-            logoutButton.classList.add('hidden');
-            serverDetail.classList.add('hidden');
+            // Clear the URL of any remaining OAuth parameters before resetting the view
+            window.history.replaceState(null, '', window.location.pathname);
             showLogin();
         }
 
@@ -241,19 +218,69 @@
         }
 
         /**
-         * Displays the login state.
+         * Displays the initial login state.
          */
         function showLogin() {
             loginView.classList.remove('hidden');
             dashboardView.classList.add('hidden');
             logoutButton.classList.add('hidden');
             loadingIndicator.classList.add('hidden');
-            loginMessage.textContent = "Your Client ID is now configured.";
+            serverDetail.classList.add('hidden');
+            loginMessage.textContent = ""; // Clear message on reset
+            document.getElementById('loginButton').classList.remove('hidden');
+            document.getElementById('loginButton').disabled = false;
+        }
+
+        /**
+         * Checks for a Discord OAuth 'code' parameter in the URL and handles the callback.
+         */
+        function handleDiscordCallback() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const error = urlParams.get('error');
+
+            // If Discord sent back a response (code or error), we were in the auth flow.
+            if (code || error) {
+                // Hide the main login button now that auth has been attempted
+                document.getElementById('loginButton').classList.add('hidden');
+
+                if (code) {
+                    // Authorization Code Received - This is where the backend would take over
+                    loginMessage.innerHTML = `
+                        <p class="text-lg font-bold text-green-400">Authorization Successful! (Frontend Step Complete)</p>
+                        <div class="mt-4 p-4 rounded-lg bg-red-800/50 border border-red-600 text-left">
+                            <p class="font-bold text-red-300">CRITICAL: BACKEND REQUIRED</p>
+                            <p class="text-sm text-red-200">The Discord Authorization Code has been received, but it **MUST** be securely exchanged for an Access Token by a **Node.js/Python server** or similar backend. This frontend-only file cannot proceed to the dashboard securely.</p>
+                            <p class="text-xs text-red-200 mt-2">To continue testing the dashboard UI mock, please click "Force Mock Login" below.</p>
+                        </div>
+                        <button class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg mt-4" onclick="forceMockLoginAndShowDashboard()">
+                            Force Mock Login
+                        </button>
+                    `;
+                } else if (error) {
+                    // Error during authorization
+                    loginMessage.textContent = `Login failed. Discord error: ${error}. Please try again.`;
+                }
+                
+                // Keep the login view visible to display the message
+                loginView.classList.remove('hidden');
+                return true;
+            }
+            return false;
+        }
+
+        /**
+         * FOR DEVELOPMENT/MOCK TESTING ONLY: Skips the token exchange and loads the mock data.
+         */
+        function forceMockLoginAndShowDashboard() {
+            isAuthenticated = true;
+            showLoading();
+            loadDashboardData();
         }
 
 
         /**
-         * Loads and renders the dashboard data.
+         * Loads and renders the mock dashboard data.
          */
         async function loadDashboardData() {
             try {
@@ -301,12 +328,8 @@
             console.log(`Navigating to dashboard for Guild ID: ${guildId}`);
         }
 
-        // --- Rendering Functions ---
+        // --- Rendering Functions (Unchanged) ---
 
-        /**
-         * Renders the global bot statistics.
-         * @param {object} stats - Bot statistics.
-         */
         function renderGlobalStats(stats) {
             globalStatsContainer.innerHTML = `
                 ${createStatCard('Bot Servers', stats.servers.toLocaleString(), 'bg-green-500')}
@@ -314,13 +337,6 @@
             `;
         }
 
-        /**
-         * Creates an HTML string for a single statistic card.
-         * @param {string} title - Card title.
-         * @param {string} value - Card value.
-         * @param {string} colorClass - Tailwind background color class.
-         * @returns {string} HTML string for the card.
-         */
         function createStatCard(title, value, colorClass) {
             return `
                 <div class="dashboard-card p-6 flex items-center">
@@ -337,10 +353,6 @@
             `;
         }
 
-        /**
-         * Renders the list of guilds (servers).
-         * @param {Array<object>} guilds - List of guild objects.
-         */
         function renderGuildsList(guilds) {
             guildsListContainer.innerHTML = '';
 
@@ -378,11 +390,12 @@
 
         // --- Initialization ---
 
-        // Check if user is theoretically authenticated (e.g., from a session cookie in a real app)
-        // For this mock, we start on the login screen.
         window.onload = () => {
-             // Start the app on the login screen
-             showLogin();
+             // Check if we are returning from Discord OAuth flow
+             if (!handleDiscordCallback()) {
+                 // If not, show the standard login screen
+                 showLogin();
+             }
         };
 
     </script>
