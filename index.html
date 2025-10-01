@@ -8,7 +8,7 @@
         /* General Styling */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f2f5; /* Light, modern background */
+            background-color: #f0f2f5; 
             color: #333;
             display: flex;
             justify-content: center;
@@ -17,20 +17,20 @@
             margin: 0;
         }
         
-        /* Login Container */
+        /* Login Container (The main box) */
         .login-container {
             background-color: #ffffff;
             padding: 40px;
             border-radius: 12px;
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
             width: 100%;
-            max-width: 400px;
+            max-width: 450px; /* Width for the dashboard content */
             text-align: center;
         }
 
         /* Titles and Text */
         h1 {
-            color: #1e88e5; /* Primary blue for branding */
+            color: #1e88e5; 
             margin-bottom: 5px;
             font-size: 2em;
         }
@@ -47,7 +47,7 @@
             margin-bottom: 15px;
             border: 1px solid #e0e0e0;
             border-radius: 8px;
-            box-sizing: border-box; /* Include padding/border in the element's total width */
+            box-sizing: border-box; 
             transition: border-color 0.3s;
         }
         input[type="text"]:focus, input[type="password"]:focus {
@@ -71,30 +71,63 @@
         button:hover {
             background-color: #1565c0;
         }
-        button:active {
-            transform: scale(0.99);
-        }
 
         /* Error Message */
         .error-message {
-            color: #d32f2f; /* Red for errors */
+            color: #d32f2f; 
             background-color: #ffebee;
             padding: 10px;
             border-radius: 4px;
             margin-top: 20px;
             font-weight: 500;
-            display: none; /* Hidden by default */
+            display: none; 
+        }
+
+        /* Dashboard Styling */
+        .dashboard-content {
+            display: none; /* Hidden by default until login */
+            text-align: left;
+            padding: 0; /* Padding is now inside the widgets */
+            background-color: #ffffff; /* Use white background for the dashboard area */
         }
         
-        /* Dashboard Styling (The destination page) */
-        .dashboard-content {
-            display: none; /* Hidden by default */
-            text-align: left;
-            padding: 20px;
-            background-color: #e3f2fd;
+        /* Widget Styles */
+        .widget {
+            margin-bottom: 20px; 
             border: 1px solid #bbdefb;
-            border-radius: 8px;
-            margin-top: 30px;
+            padding: 15px;
+            border-radius: 6px;
+            background-color: #f7f9fc;
+        }
+        .widget h3 {
+            color: #1e88e5;
+            margin-top: 0;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+        .widget table {
+            width: 100%; 
+            border-collapse: collapse; 
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+        .widget th, .widget td {
+            padding: 8px; 
+            text-align: left;
+            border-top: 1px solid #eee;
+        }
+        .widget thead tr {
+            background-color: #e3f2fd;
+        }
+        .widget tbody tr:hover {
+            background-color: #f0f7ff;
+        }
+        .logout-button {
+            background-color: #757575 !important;
+        }
+        .logout-button:hover {
+            background-color: #616161 !important;
         }
     </style>
 </head>
@@ -115,16 +148,85 @@
 
         <div id="dashboardArea" class="dashboard-content">
             <h2>Welcome, NexusTeam!</h2>
-            <hr>
-            <p><strong>Status:</strong> All Systems Operational.</p>
-            <p><strong>Today's Tasks:</strong> Review LOA Requests, Monitor Shift Logs, and complete the weekly analytics report.</p>
-            <p>This is your exclusive, secure team dashboard content.</p>
-            <button onclick="logout()">Logout</button>
+            <p class="subtitle" style="margin-bottom: 15px;">Your centralized control panel for all staff operations.</p>
+            
+            <div class="widget">
+                <h3>Shift Management Overview 🕰️</h3>
+                <p style="font-weight: bold;">On-Duty Status: <span style="color: #4caf50;">4 / 12</span> Staff Active</p>
+                <p>Top Logger (Weekly): <strong style="color: #fbc02d;">Moderator Luna</strong> (18h 45m)</p>
+                
+                <h4 style="margin-top: 15px; border-bottom: 1px solid #eee; padding-bottom: 5px; font-size: 1.1em;">Active Shifts</h4>
+                <table style="margin-top: 5px;">
+                    <thead>
+                        <tr>
+                            <th>Member</th>
+                            <th>Rank</th>
+                            <th>Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>NexusTeam</strong></td>
+                            <td>Administrator</td>
+                            <td>03h 15m</td>
+                        </tr>
+                        <tr>
+                            <td>Moderator Kilo</td>
+                            <td>Moderator</td>
+                            <td>01h 50m</td>
+                        </tr>
+                        <tr>
+                            <td>Agent Delta</td>
+                            <td>Agent</td>
+                            <td>00h 42m</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="widget">
+                <h3>Recent Moderation Log 🚨</h3>
+                <p style="font-weight: bold;">Activity: <span style="color: #d32f2f;">27</span> Actions Logged in Last 24 Hours</p>
+                
+                <h4 style="margin-top: 15px; border-bottom: 1px solid #eee; padding-bottom: 5px; font-size: 1.1em;">Latest Punishments</h4>
+                <table style="margin-top: 5px;">
+                    <thead>
+                        <tr style="background-color: #ffebee;">
+                            <th>Action</th>
+                            <th>Target</th>
+                            <th>Staff</th>
+                            <th>Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>**Temp-Ban**</td>
+                            <td>Player-Ghost42</td>
+                            <td>Admin Vega</td>
+                            <td>17:35</td>
+                        </tr>
+                        <tr>
+                            <td>Warning</td>
+                            <td>SassyPanda</td>
+                            <td>Mod Kilo</td>
+                            <td>16:11</td>
+                        </tr>
+                        <tr>
+                            <td>Kick</td>
+                            <td>Bot-Spam-88</td>
+                            <td>Agn Delta</td>
+                            <td>15:59</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <button onclick="logout()" class="logout-button">Logout</button>
         </div>
     </div>
 
     <script>
-        // REQUIRED CREDENTIALS
+        // Static Credentials for this client-side demonstration
         const REQUIRED_USERNAME = "NexusTeam";
         const REQUIRED_PASSWORD = "Nexus";
 
@@ -133,23 +235,23 @@
         const loginArea = document.getElementById('loginArea');
         const dashboardArea = document.getElementById('dashboardArea');
 
-        // Handles the form submission
+        // Handles the form submission (Login Logic)
         loginForm.addEventListener('submit', function(event) {
-            event.preventDefault(); // Stop the form from submitting normally
+            event.preventDefault(); // Prevents the page from reloading
             
             const usernameInput = document.getElementById('username').value;
             const passwordInput = document.getElementById('password').value;
 
-            // Check if credentials match
+            // Check if credentials match the required static values
             if (usernameInput === REQUIRED_USERNAME && passwordInput === REQUIRED_PASSWORD) {
-                // SUCCESS: Hide login, show dashboard
+                // SUCCESS: Hide login area and show the dashboard
                 loginError.style.display = 'none';
                 loginArea.style.display = 'none';
                 dashboardArea.style.display = 'block';
+                // Note: In a real system, a server would issue a session cookie/token here.
             } else {
-                // FAILURE: Show error message
+                // FAILURE: Show error message and clear password
                 loginError.style.display = 'block';
-                // Clear password field for security
                 document.getElementById('password').value = ''; 
             }
         });
@@ -160,9 +262,10 @@
             document.getElementById('username').value = '';
             document.getElementById('password').value = '';
             
-            // Hide dashboard, show login
+            // Hide dashboard and show login area
             dashboardArea.style.display = 'none';
             loginArea.style.display = 'block';
+            loginError.style.display = 'none'; // Clear any error message
         }
     </script>
 </body>
