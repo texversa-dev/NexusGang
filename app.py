@@ -3,28 +3,22 @@ import requests
 from flask import Flask, redirect, request, session, url_for, render_template_string, jsonify
 from flask_sqlalchemy import SQLAlchemy
 
-# --- CONFIGURATION (UPDATED WITH YOUR SECRET) ---
+# --- CONFIGURATION (CRITICAL) ---
 CLIENT_ID = "1416882044696395926" 
-# !! YOUR PROVIDED CLIENT SECRET !!
 CLIENT_SECRET = "7vgeQMvrlYzBLLaBeDma8QBU6Qa7LW0a" 
-# REDIRECT_URI is set to your root domain. YOU MUST CONFIGURE THIS EXACT URI 
-# ('https://nexuserlc.xyz/') IN THE DISCORD DEVELOPER PORTAL.
+# This MUST match the URI registered in the Discord Developer Portal
 REDIRECT_URI = "https://nexuserlc.xyz/" 
 
-# Scopes needed for identity and server list
 OAUTH_SCOPES = "identify guilds" 
 API_BASE_URL = 'https://discord.com/api/v10'
 
-# Permission constants for filtering servers (Owner, Administrator, Manage Guild)
 ADMINISTRATOR = 0x8       
 MANAGE_GUILD = 0x20       
 
 app = Flask(__name__)
-# WARNING: Change this key for production security!
 app.secret_key = os.urandom(24) 
 
 # --- DATABASE CONFIGURATION ---
-# Creates an SQLite file named 'nexus_settings.db'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///nexus_settings.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
@@ -56,7 +50,7 @@ def get_oauth_url():
     )
 
 def fetch_manageable_guilds(access_token):
-    """Fetches and filters guilds the user can manage based on permissions."""
+    """Fetches and filters guilds the user can manage."""
     headers = {'Authorization': f'Bearer {access_token}'}
     r = requests.get(f'{API_BASE_URL}/users/@me/guilds', headers=headers)
     r.raise_for_status()
@@ -65,7 +59,6 @@ def fetch_manageable_guilds(access_token):
     manageable_guilds = []
     for guild in guilds:
         permissions = int(guild.get('permissions', 0))
-        # Filter: Must be Owner OR have Administrator OR Manage Guild permission
         if guild['owner'] or (permissions & ADMINISTRATOR) or (permissions & MANAGE_GUILD):
              manageable_guilds.append(guild)
     return manageable_guilds
@@ -73,15 +66,15 @@ def fetch_manageable_guilds(access_token):
 # --- FLASK ROUTES ---
 
 @app.route("/")
-def index_or_callback():
+def index_and_callback():
     """
-    Handles both the index page AND the OAuth2 callback. 
-    Discord will redirect here with a 'code' query parameter.
+    Handles the index page, the login redirect, AND the OAuth2 callback.
+    No separate /login route exists.
     """
     code = request.args.get("code")
 
     if code:
-        # 1. This is the OAuth2 Callback logic
+        # 1. OAuth2 Callback logic
         data = {
             'client_id': CLIENT_ID, 'client_secret': CLIENT_SECRET, 'grant_type': 'authorization_code',
             'code': code, 'redirect_uri': REDIRECT_URI, 'scope': OAUTH_SCOPES
@@ -93,15 +86,15 @@ def index_or_callback():
             token_data = r.json()
             
             session['access_token'] = token_data['access_token']
-            # Redirect to dashboard without the 'code' parameter in the URL
             return redirect(url_for('dashboard'))
         except requests.exceptions.HTTPError as e:
             return f"Discord OAuth Error: {e.response.text}", 500
 
-    # 2. This is the Index page logic
+    # 2. Index page logic
     if 'access_token' in session:
         return redirect(url_for('dashboard'))
     
+    # Show login prompt, linking directly to Discord's OAuth URL
     return f"""
         <header style="background-color: #2C2F33; color: white; padding: 20px; text-align: center;">
             <h1>Nexus Dashboard</h1>
@@ -115,18 +108,12 @@ def index_or_callback():
         </div>
     """
 
-# The /login route is still useful for generating the OAuth URL without confusion
-@app.route("/login")
-def login():
-    """Redirects user to the Discord OAuth2 page."""
-    return redirect(get_oauth_url())
-
 
 @app.route("/dashboard")
 def dashboard():
-    """Serves the main dashboard HTML, injecting the server list dynamically."""
+    """Serves the dashboard content after the user is authenticated."""
     if 'access_token' not in session:
-        return redirect(url_for('index_or_callback')) # Redirect to the index route
+        return redirect(url_for('index_and_callback'))
 
     try:
         manageable_guilds = fetch_manageable_guilds(session["access_token"])
@@ -147,23 +134,20 @@ def dashboard():
                 </button>
             """
         
-        # Read the HTML template
         try:
             with open("dashboard.html", "r") as f:
                 html_template = f.read()
         except FileNotFoundError:
             return "Error: dashboard.html not found.", 500
 
-        # Inject the server list and adjust display properties
+        # Inject content and modify display styles
         html_content = html_template.replace('<div id="guild-list"></div>', f'<div id="guild-list">{guild_buttons_html}</div>')
         
         if manageable_guilds:
-            # Hide login prompt and show dashboard elements
             html_content = html_content.replace('id="login-prompt"', 'id="login-prompt" style="display: none;"')
             html_content = html_content.replace('id="dashboard-sidebar" style="display: none;"', 'id="dashboard-sidebar"')
             html_content = html_content.replace('id="dashboard-content" style="display: none;"', 'id="dashboard-content"')
             
-            # Inject the ID of the first server to trigger initial load in JavaScript
             html_content = html_content.replace(
                 '// INITIAL SETUP START',
                 f"let initialGuildId = '{first_guild_id}';"
@@ -173,15 +157,15 @@ def dashboard():
 
     except requests.exceptions.HTTPError:
         session.pop('access_token', None)
-        return redirect(url_for('index_or_callback'))
+        return redirect(url_for('index_and_callback'))
 
 @app.route("/logout")
 def logout():
     """Clears the session and logs the user out."""
     session.pop('access_token', None)
-    return redirect(url_for('index_or_callback'))
+    return redirect(url_for('index_and_callback'))
 
-# --- API ENDPOINTS (GET and POST for settings remain the same) ---
+# --- API ENDPOINTS ---
 
 @app.route("/api/settings/<guild_id>", methods=["GET"])
 def get_settings(guild_id):
@@ -241,6 +225,4 @@ def save_settings_api():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    # Note: If running locally (http://127.0.0.1:5000), you must use ngrok or similar
-    # to tunnel to https://nexuserlc.xyz/ for the Discord redirect to work.
     app.run(debug=True, port=5000)
