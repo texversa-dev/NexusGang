@@ -5,25 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nexus Bot Dashboard</title>
     <style>
-        /* CSS remains largely the same as the previous response for styling */
+        /* Base Styling */
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #202225; color: #DCDDDE; }
         header { background-color: #2C2F33; padding: 20px; text-align: center; border-bottom: 2px solid #7289DA; }
         h1 { margin: 0; color: #7289DA; }
         .container { display: flex; max-width: 1200px; margin: 20px auto; background-color: #2C2F33; box-shadow: 0 0 15px rgba(0,0,0,0.5); border-radius: 8px; min-height: 70vh; }
         .sidebar { width: 280px; padding: 20px 0; background-color: #292B2F; border-right: 1px solid #36393F; overflow-y: auto; }
         .sidebar h3 { padding: 0 20px 10px; border-bottom: 1px solid #36393F; margin-bottom: 15px; font-weight: 500; }
+        /* Server List Buttons */
         .guild-button { display: flex; align-items: center; width: 100%; padding: 10px 20px; margin-bottom: 5px; background: none; border: none; color: white; text-align: left; cursor: pointer; transition: background-color 0.2s; font-size: 16px; }
         .guild-button:hover, .guild-button.active { background-color: #36393F; border-left: 4px solid #7289DA; padding-left: 16px; }
         .guild-icon { width: 32px; height: 32px; border-radius: 50%; margin-right: 10px; background-color: #5865F2; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        /* Content Area */
         .content { flex-grow: 1; padding: 30px; }
         .feature-panel { display: none; padding-top: 20px; }
         .feature-panel.active { display: block; }
+        /* Tabs */
         .nav-tabs button { background: none; border: none; color: #B9BBBE; padding: 10px 15px; cursor: pointer; font-size: 16px; transition: color 0.2s, border-bottom 0.2s; }
         .nav-tabs button.active { color: white; border-bottom: 2px solid #7289DA; }
+        /* Forms */
         label { display: block; margin-top: 15px; margin-bottom: 5px; color: #B9BBBE; font-weight: 600; }
         input[type="text"], textarea, select { width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 4px; border: 1px solid #4F545C; background-color: #40444B; color: white; box-sizing: border-box; }
+        textarea { resize: vertical; }
         button[type="submit"] { background-color: #5865F2; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.2s; }
         button[type="submit"]:hover { background-color: #4752C4; }
+        /* Login Prompt */
         #login-prompt { text-align: center; padding: 50px; width: 100%; }
         #login-link { padding: 12px 25px; background-color: #7289DA; color: white; text-decoration: none; border-radius: 5px; font-size: 18px; display: inline-block; margin-top: 20px; }
     </style>
@@ -94,6 +100,7 @@
     <script>
         let selectedGuildId = null;
         let selectedGuildName = null;
+        let initialGuildId = null; // Placeholder for Flask injection
 
         // Function to apply fetched settings to the forms
         function populateForms(settings) {
@@ -109,7 +116,7 @@
         }
 
         // Handles clicking a server in the sidebar
-        async function selectServer(guildId, guildName) {
+        async function selectServer(guildId, guildName, element) {
             selectedGuildId = guildId;
             selectedGuildName = guildName;
             document.getElementById('current-server-name').textContent = `Settings for: ${guildName}`;
@@ -118,14 +125,15 @@
             document.querySelectorAll('.guild-button').forEach(btn => {
                 btn.classList.remove('active');
             });
-            event.currentTarget.classList.add('active');
+            if (element) {
+                element.classList.add('active');
+            } else {
+                // Initial load logic: find the correct button
+                const initialButton = document.querySelector(`.guild-button[onclick*="'${guildId}'"]`);
+                if (initialButton) initialButton.classList.add('active');
+            }
             
-            // Show the dashboard parts (Flask handles this usually, but good to have)
-            document.getElementById('dashboard-sidebar').style.display = 'block';
-            document.getElementById('dashboard-content').style.display = 'block';
-            document.getElementById('login-prompt').style.display = 'none';
-
-            // 2. FETCH SETTINGS from the Flask backend API
+            // FETCH SETTINGS from the Flask backend API
             try {
                 const response = await fetch(`/api/settings/${guildId}`);
                 if (response.status === 401 || response.status === 403) {
@@ -142,7 +150,6 @@
             } catch (error) {
                 console.error('Fetch error:', error);
                 alert('Could not load settings for this server. Please try logging in again.');
-                // Optionally redirect to login if unauthorized
             }
         }
 
@@ -161,10 +168,11 @@
 
             // Collect checkbox status separately
             if (feature === 'moderation') {
+                // Convert checked state to boolean-like value for backend
                 settings['filter-status'] = document.getElementById('filter-status').checked;
             }
 
-            // 3. SEND SETTINGS to the Flask backend API
+            // SEND SETTINGS to the Flask backend API
             try {
                 const response = await fetch('/api/save_settings', {
                     method: 'POST',
@@ -202,14 +210,18 @@
             tabElement.classList.add('active');
         }
 
-        // INITIAL SETUP - Populated by Flask
-        // When Flask serves the page, it replaces the placeholders and runs selectServer for the first guild.
+        // INITIAL SETUP START
+        // Flask injects the initialGuildId variable here if the user is logged in.
+
         document.addEventListener('DOMContentLoaded', () => {
-             // If the server list was successfully injected (meaning the user is logged in), 
-             // automatically click the first server to load settings.
-             const firstButton = document.querySelector('.guild-button');
-             if (firstButton) {
-                 firstButton.click();
+             // If Flask has provided the initial guild ID, load its settings automatically.
+             if (initialGuildId) {
+                 const initialButton = document.querySelector(`.guild-button[onclick*="'${initialGuildId}'"]`);
+                 if (initialButton) {
+                     // Get name from the button content for the initial call
+                     const guildName = initialButton.textContent.trim().replace(initialButton.querySelector('.guild-icon').textContent, '').trim();
+                     selectServer(initialGuildId, guildName, initialButton);
+                 }
              }
         });
     </script>
