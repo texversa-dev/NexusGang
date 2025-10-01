@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Login</title>
+    <style>
+        body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f4f4f9; }
+        .login-container { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); }
+        input[type="text"], input[type="password"] { width: 100%; padding: 10px; margin: 8px 0 15px 0; border: 1px solid #ccc; box-sizing: border-box; }
+        button { background-color: #007bff; color: white; padding: 14px 20px; margin: 8px 0; border: none; cursor: pointer; width: 100%; font-size: 1.1em; }
+        #message { color: crimson; margin-bottom: 15px; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <h1>Staff Area Login</h1>
+        <p id="message"></p>
+        
+        <form id="loginForm">
+            <div>
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div>
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit">Log In</button>
+        </form>
+    </div>
+
+    <script>
+        // *** Client-Side Validation - DO NOT USE FOR SENSITIVE DATA ***
+        const VALID_USERNAME = 'NexusYes';
+        const VALID_PASSWORD = 'Nexus1!';
+        const loginForm = document.getElementById('loginForm');
+        const message = document.getElementById('message');
+
+        loginForm.addEventListener('submit', function(event) {
+            event.preventDefault(); // Stop the form from submitting normally
+
+            const inputUsername = document.getElementById('username').value;
+            const inputPassword = document.getElementById('password').value;
+
+            // Check credentials
+            if (inputUsername === VALID_USERNAME && inputPassword === VALID_PASSWORD) {
+                // SUCCESS: Redirect to the "coming soon" page
+                window.location.href = 'coming_soon.html';
+            } else {
+                // FAILURE: Show error
+                message.textContent = '❌ Invalid username or password.';
+                document.getElementById('password').value = ''; // Clear password field
+            }
+        });
+    </script>
+</body>
+</html>
