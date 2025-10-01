@@ -5,148 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nexus Bot Dashboard</title>
     <style>
-        /* Basic CSS for a clean look */
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #202225; /* Dark Discord background */
-            color: #DCDDDE;
-        }
-        header {
-            background-color: #2C2F33; /* Darker Discord header color */
-            padding: 20px;
-            text-align: center;
-            border-bottom: 2px solid #7289DA;
-        }
-        h1 {
-            margin: 0;
-            color: #7289DA; /* Bot name in Discord Blue */
-        }
-        .container {
-            display: flex;
-            max-width: 1200px;
-            margin: 20px auto;
-            background-color: #2C2F33;
-            box-shadow: 0 0 15px rgba(0,0,0,0.5);
-            border-radius: 8px;
-            min-height: 70vh;
-        }
-        .sidebar {
-            width: 280px;
-            padding: 20px 0;
-            background-color: #292B2F; /* Server List Background */
-            border-right: 1px solid #36393F;
-            overflow-y: auto;
-        }
-        .sidebar h3 {
-            padding: 0 20px 10px;
-            border-bottom: 1px solid #36393F;
-            margin-bottom: 15px;
-            font-weight: 500;
-        }
-        .guild-button {
-            display: flex;
-            align-items: center;
-            width: 100%;
-            padding: 10px 20px;
-            margin-bottom: 5px;
-            background: none;
-            border: none;
-            color: white;
-            text-align: left;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            font-size: 16px;
-        }
-        .guild-button:hover, .guild-button.active {
-            background-color: #36393F;
-            border-left: 4px solid #7289DA;
-            padding-left: 16px;
-        }
-        .guild-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            margin-right: 10px;
-            background-color: #5865F2; /* Placeholder color */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-        }
-        .content {
-            flex-grow: 1;
-            padding: 30px;
-        }
-        .feature-panel {
-            display: none;
-            padding-top: 20px;
-        }
-        .feature-panel.active {
-            display: block;
-        }
-        .nav-tabs button {
-            background: none;
-            border: none;
-            color: #B9BBBE;
-            padding: 10px 15px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: color 0.2s, border-bottom 0.2s;
-        }
-        .nav-tabs button.active {
-            color: white;
-            border-bottom: 2px solid #7289DA;
-        }
-        label {
-            display: block;
-            margin-top: 15px;
-            margin-bottom: 5px;
-            color: #B9BBBE;
-            font-weight: 600;
-        }
-        input[type="text"], textarea, select {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 15px;
-            border-radius: 4px;
-            border: 1px solid #4F545C;
-            background-color: #40444B;
-            color: white;
-            box-sizing: border-box;
-        }
-        textarea {
-            resize: vertical;
-        }
-        button[type="submit"] {
-            background-color: #5865F2; /* Blurple */
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        button[type="submit"]:hover {
-            background-color: #4752C4;
-        }
-        /* Login state specific styles */
-        #login-prompt {
-            text-align: center;
-            padding: 50px;
-            width: 100%;
-        }
-        #login-link {
-            padding: 12px 25px;
-            background-color: #7289DA;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            font-size: 18px;
-            display: inline-block;
-            margin-top: 20px;
-        }
+        /* CSS remains largely the same as the previous response for styling */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #202225; color: #DCDDDE; }
+        header { background-color: #2C2F33; padding: 20px; text-align: center; border-bottom: 2px solid #7289DA; }
+        h1 { margin: 0; color: #7289DA; }
+        .container { display: flex; max-width: 1200px; margin: 20px auto; background-color: #2C2F33; box-shadow: 0 0 15px rgba(0,0,0,0.5); border-radius: 8px; min-height: 70vh; }
+        .sidebar { width: 280px; padding: 20px 0; background-color: #292B2F; border-right: 1px solid #36393F; overflow-y: auto; }
+        .sidebar h3 { padding: 0 20px 10px; border-bottom: 1px solid #36393F; margin-bottom: 15px; font-weight: 500; }
+        .guild-button { display: flex; align-items: center; width: 100%; padding: 10px 20px; margin-bottom: 5px; background: none; border: none; color: white; text-align: left; cursor: pointer; transition: background-color 0.2s; font-size: 16px; }
+        .guild-button:hover, .guild-button.active { background-color: #36393F; border-left: 4px solid #7289DA; padding-left: 16px; }
+        .guild-icon { width: 32px; height: 32px; border-radius: 50%; margin-right: 10px; background-color: #5865F2; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        .content { flex-grow: 1; padding: 30px; }
+        .feature-panel { display: none; padding-top: 20px; }
+        .feature-panel.active { display: block; }
+        .nav-tabs button { background: none; border: none; color: #B9BBBE; padding: 10px 15px; cursor: pointer; font-size: 16px; transition: color 0.2s, border-bottom 0.2s; }
+        .nav-tabs button.active { color: white; border-bottom: 2px solid #7289DA; }
+        label { display: block; margin-top: 15px; margin-bottom: 5px; color: #B9BBBE; font-weight: 600; }
+        input[type="text"], textarea, select { width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 4px; border: 1px solid #4F545C; background-color: #40444B; color: white; box-sizing: border-box; }
+        button[type="submit"] { background-color: #5865F2; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.2s; }
+        button[type="submit"]:hover { background-color: #4752C4; }
+        #login-prompt { text-align: center; padding: 50px; width: 100%; }
+        #login-link { padding: 12px 25px; background-color: #7289DA; color: white; text-decoration: none; border-radius: 5px; font-size: 18px; display: inline-block; margin-top: 20px; }
     </style>
 </head>
 <body>
@@ -167,20 +46,11 @@
 
         <div class="sidebar" id="dashboard-sidebar" style="display: none;">
             <h3>Servers You Can Manage</h3>
-            <div id="guild-list">
-                <button class="guild-button active" onclick="selectServer('123', 'Nexus Home Guild')">
-                    <span class="guild-icon">NG</span>
-                    Nexus Home Guild
-                </button>
-                <button class="guild-button" onclick="selectServer('456', 'Admin Test Server')" style="margin-top: 5px;">
-                    <span class="guild-icon">AT</span>
-                    Admin Test Server
-                </button>
-            </div>
+            <div id="guild-list"></div>
         </div>
 
         <div class="content" id="dashboard-content" style="display: none;">
-            <h2 id="current-server-name">Settings for: Nexus Home Guild</h2>
+            <h2 id="current-server-name">Select a Server from the list on the left</h2>
             
             <div class="nav-tabs">
                 <button id="tab-moderation" class="active" onclick="showPanel('moderation', this)">Moderation</button>
@@ -189,18 +59,15 @@
 
             <div id="moderation-panel" class="feature-panel active">
                 <h3>Auto-Moderation Settings</h3>
-                <form onsubmit="saveSettings(event, 'moderation')">
-                    <label for="mod-log-channel">Mod Log Channel:</label>
-                    <select id="mod-log-channel">
-                        <option value="123456789">#mod-logs (Dummy)</option>
-                        <option value="987654321">#server-management (Dummy)</option>
-                    </select>
+                <form id="moderation-form" onsubmit="saveSettings(event, 'moderation')">
+                    <label for="mod-log-channel">Mod Log Channel (ID):</label>
+                    <input type="text" id="mod-log-channel" name="mod-log-channel" placeholder="e.g., 123456789012345678">
 
                     <label for="filter-status">Swear Word Filter Status:</label>
-                    <input type="checkbox" id="filter-status" checked> <span style="color:#7289DA;">Enable Auto-Deletion</span>
+                    <div><input type="checkbox" id="filter-status" name="filter-status"> <span style="color:#7289DA;">Enable Auto-Deletion</span></div>
 
                     <label for="mute-role">Mute Role Name:</label>
-                    <input type="text" id="mute-role" placeholder="e.g., Muted" value="Muted">
+                    <input type="text" id="mute-role" name="mute-role" placeholder="e.g., Muted">
 
                     <button type="submit">Save Moderation Settings</button>
                 </form>
@@ -208,18 +75,15 @@
 
             <div id="welcome-panel" class="feature-panel">
                 <h3>Welcome Message Settings</h3>
-                <form onsubmit="saveSettings(event, 'welcome')">
-                    <label for="welcome-channel">Welcome Channel:</label>
-                    <select id="welcome-channel">
-                        <option value="123456789">#general (Dummy)</option>
-                        <option value="987654321">#welcome (Dummy)</option>
-                    </select>
+                <form id="welcome-form" onsubmit="saveSettings(event, 'welcome')">
+                    <label for="welcome-channel">Welcome Channel (ID):</label>
+                    <input type="text" id="welcome-channel" name="welcome-channel" placeholder="e.g., 123456789012345678">
 
                     <label for="welcome-message">Message Content (Use {user} for mention, {server} for name):</label>
-                    <textarea id="welcome-message" rows="5" placeholder="Welcome {user}! Enjoy your stay.">Welcome to {server}, {user}! We're glad to have you.</textarea>
+                    <textarea id="welcome-message" name="welcome-message" rows="5" placeholder="Welcome {user}! Enjoy your stay."></textarea>
 
                     <label for="welcome-role">Auto-Assign Role on Join (Optional Role Name):</label>
-                    <input type="text" id="welcome-role" placeholder="e.g., Member">
+                    <input type="text" id="welcome-role" name="welcome-role" placeholder="e.g., Member">
                     
                     <button type="submit">Save Welcome Settings</button>
                 </form>
@@ -228,57 +92,63 @@
     </div>
 
     <script>
-        let selectedGuildId = '123'; // Default to the first dummy server
-        
-        // Initial setup for the dummy view
-        document.addEventListener('DOMContentLoaded', () => {
-             // In a real Flask app, you'd hide the login prompt and show the dashboard 
-             // only if the user is authenticated.
-             document.getElementById('dashboard-sidebar').style.display = 'block';
-             document.getElementById('dashboard-content').style.display = 'block';
-             document.getElementById('login-prompt').style.display = 'none';
-        });
+        let selectedGuildId = null;
+        let selectedGuildName = null;
 
-        /** Switches the active feature panel (Moderation/Welcome) */
-        function showPanel(panelId, tabElement) {
-            // Update panel visibility
-            document.querySelectorAll('.feature-panel').forEach(panel => {
-                panel.classList.remove('active');
-            });
-            document.getElementById(panelId + '-panel').classList.add('active');
-
-            // Update tab styling
-            document.querySelectorAll('.nav-tabs button').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            tabElement.classList.add('active');
+        // Function to apply fetched settings to the forms
+        function populateForms(settings) {
+            // Moderation
+            document.getElementById('mod-log-channel').value = settings.mod_log_channel_id || '';
+            document.getElementById('filter-status').checked = settings.automod_enabled || false;
+            document.getElementById('mute-role').value = settings.mute_role || '';
+            
+            // Welcome
+            document.getElementById('welcome-channel').value = settings.welcome_channel_id || '';
+            document.getElementById('welcome-message').value = settings.welcome_message || '';
+            document.getElementById('welcome-role').value = settings.welcome_role || '';
         }
 
-        /** Handles clicking a server in the sidebar */
-        function selectServer(guildId, guildName) {
+        // Handles clicking a server in the sidebar
+        async function selectServer(guildId, guildName) {
             selectedGuildId = guildId;
+            selectedGuildName = guildName;
             document.getElementById('current-server-name').textContent = `Settings for: ${guildName}`;
 
-            // 1. Visually mark the selected server
+            // Visually mark the selected server
             document.querySelectorAll('.guild-button').forEach(btn => {
                 btn.classList.remove('active');
             });
-            // This is a simple way to find and activate the clicked button
             event.currentTarget.classList.add('active');
             
-            // 2. CRITICAL: AJAX request goes here to fetch the actual settings 
-            // from your Python backend for this specific guildId.
-            console.log(`Fetching Nexus settings for Guild ID: ${guildId}`);
-
-            // Ensure the dashboard is visible
+            // Show the dashboard parts (Flask handles this usually, but good to have)
             document.getElementById('dashboard-sidebar').style.display = 'block';
             document.getElementById('dashboard-content').style.display = 'block';
             document.getElementById('login-prompt').style.display = 'none';
+
+            // 2. FETCH SETTINGS from the Flask backend API
+            try {
+                const response = await fetch(`/api/settings/${guildId}`);
+                if (response.status === 401 || response.status === 403) {
+                    throw new Error("Unauthorized or Permission Denied.");
+                }
+                const data = await response.json();
+                
+                if (data.success) {
+                    populateForms(data.settings);
+                    console.log(`Settings loaded for ${guildName}.`);
+                } else {
+                    alert('Error loading settings: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                alert('Could not load settings for this server. Please try logging in again.');
+                // Optionally redirect to login if unauthorized
+            }
         }
 
-        /** Handles saving form data */
-        function saveSettings(event, feature) {
-            event.preventDefault(); // Stop the form from submitting normally
+        // Handles saving form data
+        async function saveSettings(event, feature) {
+            event.preventDefault(); 
             
             if (!selectedGuildId) {
                 alert('Please select a server first.');
@@ -286,36 +156,62 @@
             }
 
             const formData = new FormData(event.target);
-            const data = {};
-            formData.forEach((value, key) => { data[key] = value; });
+            const settings = {};
+            formData.forEach((value, key) => { settings[key] = value; });
 
-            // Collect checkbox status
+            // Collect checkbox status separately
             if (feature === 'moderation') {
-                data['filter-status'] = document.getElementById('filter-status').checked;
+                settings['filter-status'] = document.getElementById('filter-status').checked;
             }
 
-            // CRITICAL: Send this data object to your Python backend using a fetch() or XMLHttpRequest
-            console.log(`Sending data to backend for Nexus Guild ${selectedGuildId}:`, data);
+            // 3. SEND SETTINGS to the Flask backend API
+            try {
+                const response = await fetch('/api/save_settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        guild_id: selectedGuildId, 
+                        feature: feature, 
+                        settings: settings 
+                    })
+                });
 
-            // Example of a fetch request (you need to implement the backend /api/save endpoint)
-            /*
-            fetch('/api/save_settings', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ guild_id: selectedGuildId, feature: feature, settings: data })
-            })
-            .then(response => response.json())
-            .then(result => {
+                const result = await response.json();
+                
                 if (result.success) {
-                    alert(`${feature} settings saved successfully!`);
+                    alert(`${feature} settings saved successfully for ${selectedGuildName}!`);
                 } else {
                     alert(`Error saving ${feature} settings: ${result.error}`);
                 }
-            })
-            .catch(error => console.error('Network Error:', error));
-            */
-            alert(`${feature} settings saved! (Simulated)`);
+            } catch (error) {
+                console.error('Network Error:', error);
+                alert('An unexpected error occurred while saving.');
+            }
         }
+        
+        // Switches the active feature panel
+        function showPanel(panelId, tabElement) {
+            document.querySelectorAll('.feature-panel').forEach(panel => {
+                panel.classList.remove('active');
+            });
+            document.getElementById(panelId + '-panel').classList.add('active');
+
+            document.querySelectorAll('.nav-tabs button').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            tabElement.classList.add('active');
+        }
+
+        // INITIAL SETUP - Populated by Flask
+        // When Flask serves the page, it replaces the placeholders and runs selectServer for the first guild.
+        document.addEventListener('DOMContentLoaded', () => {
+             // If the server list was successfully injected (meaning the user is logged in), 
+             // automatically click the first server to load settings.
+             const firstButton = document.querySelector('.guild-button');
+             if (firstButton) {
+                 firstButton.click();
+             }
+        });
     </script>
 
 </body>
