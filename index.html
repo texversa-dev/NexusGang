@@ -45,7 +45,7 @@
         <div id="login-prompt">
             <h2>Welcome to the Nexus Control Panel!</h2>
             <p>Please log in with Discord to access your server settings.</p>
-            <a id="login-link" href="/login">
+            <a id="login-link" href="/">
                 Login with Discord
             </a>
         </div>
@@ -100,7 +100,9 @@
     <script>
         let selectedGuildId = null;
         let selectedGuildName = null;
-        let initialGuildId = null; // Placeholder for Flask injection
+        // INITIAL SETUP START
+        // Flask injects the initialGuildId variable here if the user is logged in.
+        let initialGuildId = null; 
 
         // Function to apply fetched settings to the forms
         function populateForms(settings) {
@@ -168,7 +170,7 @@
 
             // Collect checkbox status separately
             if (feature === 'moderation') {
-                // Convert checked state to boolean-like value for backend
+                // Ensure filter-status is a boolean in the JSON payload
                 settings['filter-status'] = document.getElementById('filter-status').checked;
             }
 
@@ -210,16 +212,18 @@
             tabElement.classList.add('active');
         }
 
-        // INITIAL SETUP START
-        // Flask injects the initialGuildId variable here if the user is logged in.
-
         document.addEventListener('DOMContentLoaded', () => {
              // If Flask has provided the initial guild ID, load its settings automatically.
              if (initialGuildId) {
                  const initialButton = document.querySelector(`.guild-button[onclick*="'${initialGuildId}'"]`);
                  if (initialButton) {
                      // Get name from the button content for the initial call
-                     const guildName = initialButton.textContent.trim().replace(initialButton.querySelector('.guild-icon').textContent, '').trim();
+                     // This is a robust way to get the text content while ignoring the icon span
+                     const guildName = Array.from(initialButton.childNodes)
+                                         .filter(node => node.nodeType === 3) // Filter for text nodes
+                                         .map(node => node.textContent.trim())
+                                         .join('');
+                     
                      selectServer(initialGuildId, guildName, initialButton);
                  }
              }
