@@ -3,228 +3,388 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nexus Bot Dashboard</title>
+    <title>Discord Bot Dashboard</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Configure Tailwind to use Inter font -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        discord: '#5865F2',
+                        discorddark: '#4f59e3',
+                        cardbg: '#2F3136',
+                        bodybg: '#202225',
+                        textlight: '#DCDDDE',
+                        textmuted: '#B9BBBE',
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        /* Base Styling */
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: #202225; color: #DCDDDE; }
-        header { background-color: #2C2F33; padding: 20px; text-align: center; border-bottom: 2px solid #7289DA; }
-        h1 { margin: 0; color: #7289DA; }
-        .container { display: flex; max-width: 1200px; margin: 20px auto; background-color: #2C2F33; box-shadow: 0 0 15px rgba(0,0,0,0.5); border-radius: 8px; min-height: 70vh; }
-        .sidebar { width: 280px; padding: 20px 0; background-color: #292B2F; border-right: 1px solid #36393F; overflow-y: auto; }
-        .sidebar h3 { padding: 0 20px 10px; border-bottom: 1px solid #36393F; margin-bottom: 15px; font-weight: 500; }
-        /* Server List Buttons */
-        .guild-button { display: flex; align-items: center; width: 100%; padding: 10px 20px; margin-bottom: 5px; background: none; border: none; color: white; text-align: left; cursor: pointer; transition: background-color 0.2s; font-size: 16px; }
-        .guild-button:hover, .guild-button.active { background-color: #36393F; border-left: 4px solid #7289DA; padding-left: 16px; }
-        .guild-icon { width: 32px; height: 32px; border-radius: 50%; margin-right: 10px; background-color: #5865F2; display: flex; align-items: center; justify-content: center; font-weight: bold; }
-        /* Content Area */
-        .content { flex-grow: 1; padding: 30px; }
-        .feature-panel { display: none; padding-top: 20px; }
-        .feature-panel.active { display: block; }
-        /* Tabs */
-        .nav-tabs button { background: none; border: none; color: #B9BBBE; padding: 10px 15px; cursor: pointer; font-size: 16px; transition: color 0.2s, border-bottom 0.2s; }
-        .nav-tabs button.active { color: white; border-bottom: 2px solid #7289DA; }
-        /* Forms */
-        label { display: block; margin-top: 15px; margin-bottom: 5px; color: #B9BBBE; font-weight: 600; }
-        input[type="text"], textarea, select { width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 4px; border: 1px solid #4F545C; background-color: #40444B; color: white; box-sizing: border-box; }
-        textarea { resize: vertical; }
-        button[type="submit"] { background-color: #5865F2; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.2s; }
-        button[type="submit"]:hover { background-color: #4752C4; }
-        /* Login Prompt */
-        #login-prompt { text-align: center; padding: 50px; width: 100%; }
-        #login-link { padding: 12px 25px; background-color: #7289DA; color: white; text-decoration: none; border-radius: 5px; font-size: 18px; display: inline-block; margin-top: 20px; }
+        /* Custom styles for aesthetic */
+        body {
+            background-color: theme('colors.bodybg');
+            color: theme('colors.textlight');
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+        }
+        .dashboard-card {
+            background-color: theme('colors.cardbg');
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
     </style>
 </head>
 <body>
 
-    <header>
-        <h1>Nexus Dashboard</h1>
-        <p style="color: #B9BBBE; margin: 5px 0 0;">Manage your servers quickly and easily.</p>
+    <header class="bg-cardbg p-4 shadow-lg sticky top-0 z-10">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-textlight flex items-center">
+                <svg class="w-6 h-6 mr-2 text-discord" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12.001 0C6.12 0 1.25 4.88 1.25 10.75V24H3.75V21.5H8.75V24H11.25V21.5H13.75V24H18.75V21.5H21.25V24H23.75V10.75C23.75 4.88 18.88 0 13.001 0H12.001ZM8.75 10.75C8.75 12.03 7.74 13.04 6.46 13.04C5.18 13.04 4.17 12.03 4.17 10.75C4.17 9.47 5.18 8.46 6.46 8.46C7.74 8.46 8.75 9.47 8.75 10.75ZM19.54 10.75C19.54 12.03 18.53 13.04 17.25 13.04C15.97 13.04 14.96 12.03 14.96 10.75C14.96 9.47 15.97 8.46 17.25 8.46C18.53 8.46 19.54 9.47 19.54 10.75Z"/>
+                </svg>
+                Bot Command Center
+            </h1>
+            <button id="logoutButton" class="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg shadow transition duration-200 hidden" onclick="logout()">
+                Logout
+            </button>
+        </div>
     </header>
 
-    <div class="container">
-        <div id="login-prompt">
-            <h2>Welcome to the Nexus Control Panel!</h2>
-            <p>Please log in with Discord to access your server settings.</p>
-            <a id="login-link" href="/">
-                Login with Discord
-            </a>
-        </div>
+    <main class="max-w-7xl mx-auto p-4 md:p-8">
 
-        <div class="sidebar" id="dashboard-sidebar" style="display: none;">
-            <h3>Servers You Can Manage</h3>
-            <div id="guild-list"></div>
-        </div>
+        <!-- Initial/Login View -->
+        <section id="loginView" class="flex flex-col items-center justify-center min-h-[70vh] text-center">
+            <div class="dashboard-card p-10 max-w-lg w-full">
+                <h2 class="text-3xl font-extrabold text-textlight mb-4">Access Your Server Dashboard</h2>
+                <p class="text-textmuted mb-8">Log in with Discord to manage your servers that have our bot installed.</p>
+                <!-- This button would redirect to Discord's OAuth2 authorization page -->
+                <button id="loginButton" class="bg-discord hover:bg-discorddark text-white font-bold py-3 px-6 rounded-lg shadow-xl transition duration-300 transform hover:scale-105 flex items-center justify-center mx-auto" onclick="mockDiscordLogin()">
+                    <svg class="w-6 h-6 mr-3" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12.001 0C6.12 0 1.25 4.88 1.25 10.75V24H3.75V21.5H8.75V24H11.25V21.5H13.75V24H18.75V21.5H21.25V24H23.75V10.75C23.75 4.88 18.88 0 13.001 0H12.001ZM8.75 10.75C8.75 12.03 7.74 13.04 6.46 13.04C5.18 13.04 4.17 12.03 4.17 10.75C4.17 9.47 5.18 8.46 6.46 8.46C7.74 8.46 8.75 9.47 8.75 10.75ZM19.54 10.75C19.54 12.03 18.53 13.04 17.25 13.04C15.97 13.04 14.96 12.03 14.96 10.75C14.96 9.47 15.97 8.46 17.25 8.46C18.53 8.46 19.54 9.47 19.54 10.75Z"/>
+                    </svg>
+                    Login with Discord
+                </button>
+                <p id="loginMessage" class="mt-4 text-discord font-semibold"></p>
+                <p class="text-xs text-textmuted mt-4">
+                    NOTE: A real bot requires a secure server backend for this login process.
+                </p>
+            </div>
+        </section>
 
-        <div class="content" id="dashboard-content" style="display: none;">
-            <h2 id="current-server-name">Select a Server from the list on the left</h2>
-            
-            <div class="nav-tabs">
-                <button id="tab-moderation" class="active" onclick="showPanel('moderation', this)">Moderation</button>
-                <button id="tab-welcome" onclick="showPanel('welcome', this)">Welcome</button>
+        <!-- Dashboard View -->
+        <section id="dashboardView" class="hidden">
+            <h2 class="text-3xl font-extrabold text-textlight mb-6">Bot & Server Dashboard</h2>
+
+            <!-- Global Bot Statistics -->
+            <div class="mb-8">
+                <h3 class="text-xl font-semibold text-textlight mb-4 border-b border-gray-600 pb-2">Global Bot Stats</h3>
+                <div id="globalStats" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Stats will be inserted here by JS -->
+                </div>
             </div>
 
-            <div id="moderation-panel" class="feature-panel active">
-                <h3>Auto-Moderation Settings</h3>
-                <form id="moderation-form" onsubmit="saveSettings(event, 'moderation')">
-                    <label for="mod-log-channel">Mod Log Channel (ID):</label>
-                    <input type="text" id="mod-log-channel" name="mod-log-channel" placeholder="e.g., 123456789012345678">
-
-                    <label for="filter-status">Swear Word Filter Status:</label>
-                    <div><input type="checkbox" id="filter-status" name="filter-status"> <span style="color:#7289DA;">Enable Auto-Deletion</span></div>
-
-                    <label for="mute-role">Mute Role Name:</label>
-                    <input type="text" id="mute-role" name="mute-role" placeholder="e.g., Muted">
-
-                    <button type="submit">Save Moderation Settings</button>
-                </form>
+            <!-- User's Servers List -->
+            <div class="mb-8">
+                <h3 class="text-xl font-semibold text-textlight mb-4 border-b border-gray-600 pb-2">Your Managed Servers (Bot must be in them)</h3>
+                <div id="guildsList" class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <!-- Servers will be inserted here by JS -->
+                </div>
+                <p id="noGuildsMessage" class="text-textmuted text-center mt-8 hidden">
+                    The bot is not currently in any of the servers you manage.
+                </p>
             </div>
 
-            <div id="welcome-panel" class="feature-panel">
-                <h3>Welcome Message Settings</h3>
-                <form id="welcome-form" onsubmit="saveSettings(event, 'welcome')">
-                    <label for="welcome-channel">Welcome Channel (ID):</label>
-                    <input type="text" id="welcome-channel" name="welcome-channel" placeholder="e.g., 123456789012345678">
-
-                    <label for="welcome-message">Message Content (Use {user} for mention, {server} for name):</label>
-                    <textarea id="welcome-message" name="welcome-message" rows="5" placeholder="Welcome {user}! Enjoy your stay."></textarea>
-
-                    <label for="welcome-role">Auto-Assign Role on Join (Optional Role Name):</label>
-                    <input type="text" id="welcome-role" name="welcome-role" placeholder="e.g., Member">
-                    
-                    <button type="submit">Save Welcome Settings</button>
-                </form>
+            <!-- Server Dashboard Detail (Mock View) -->
+            <div id="serverDetail" class="hidden">
+                <div class="dashboard-card p-6">
+                    <h3 id="detailHeader" class="text-2xl font-bold mb-4"></h3>
+                    <p class="text-textmuted mb-4">This section would be the full configuration panel for the selected server. Here, you would implement settings, command toggles, logging channels, etc., specific to that guild (ID: <span id="detailGuildId" class="font-mono text-sm text-discord"></span>).</p>
+                    <button class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-200" onclick="showDashboard()">
+                        &larr; Back to Server List
+                    </button>
+                </div>
             </div>
+        </section>
+
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="hidden flex flex-col items-center justify-center min-h-[70vh]">
+            <div class="w-12 h-12 border-4 border-discord border-t-transparent rounded-full animate-spin"></div>
+            <p class="mt-4 text-lg font-semibold text-textmuted">Loading bot data...</p>
         </div>
-    </div>
+
+    </main>
 
     <script>
-        let selectedGuildId = null;
-        let selectedGuildName = null;
-        // INITIAL SETUP START
-        let initialGuildId = null; 
+        // --- Global Variables and Constants ---
 
-        // Function to apply fetched settings to the forms
-        function populateForms(settings) {
-            // Moderation
-            document.getElementById('mod-log-channel').value = settings.mod_log_channel_id || '';
-            document.getElementById('filter-status').checked = settings.automod_enabled || false;
-            document.getElementById('mute-role').value = settings.mute_role || '';
-            
-            // Welcome
-            document.getElementById('welcome-channel').value = settings.welcome_channel_id || '';
-            document.getElementById('welcome-message').value = settings.welcome_message || '';
-            document.getElementById('welcome-role').value = settings.welcome_role || '';
-        }
+        // DISCORD OAUTH CONFIGURATION (Using the provided Client ID)
+        const CLIENT_ID = '1416882044696395926';
+        // IMPORTANT: Replace this with the actual URL your backend uses to handle the Discord redirect!
+        const REDIRECT_URI = 'http://localhost:3000/auth/discord/callback';
+        const SCOPES = 'identify%20guilds'; // Scopes needed: user info and guild list
+        const DISCORD_AUTH_URL = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=${SCOPES}`;
 
-        // Handles clicking a server in the sidebar
-        async function selectServer(guildId, guildName, element) {
-            selectedGuildId = guildId;
-            selectedGuildName = guildName;
-            document.getElementById('current-server-name').textContent = `Settings for: ${guildName}`;
+        // In a real application, __app_id and __firebase_config would be injected by the environment.
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const apiKey = ""; // API key for external LLM calls (left blank as per instructions)
 
-            // Visually mark the selected server
-            document.querySelectorAll('.guild-button').forEach(btn => {
-                btn.classList.remove('active');
+        const loginView = document.getElementById('loginView');
+        const dashboardView = document.getElementById('dashboardView');
+        const logoutButton = document.getElementById('logoutButton');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const globalStatsContainer = document.getElementById('globalStats');
+        const guildsListContainer = document.getElementById('guildsList');
+        const noGuildsMessage = document.getElementById('noGuildsMessage');
+        const serverDetail = document.getElementById('serverDetail');
+        const detailHeader = document.getElementById('detailHeader');
+        const detailGuildId = document.getElementById('detailGuildId');
+        const loginMessage = document.getElementById('loginMessage');
+
+        let isAuthenticated = false;
+
+        // --- Mock Data Functions (Replace with REAL API Calls) ---
+
+        /**
+         * IMPORTANT: In a real application, these functions would fetch data from your
+         * secure server backend, which in turn communicates with the Discord API.
+         * The response is simulated here.
+         */
+
+        const MOCK_BOT_STATS = {
+            servers: 7890,
+            users: 154000,
+        };
+
+        const MOCK_GUILDS = [
+            { id: '1001', name: 'The Community Hub', icon: 'server-icon-1', owner: true, bot_in: true },
+            { id: '1002', name: 'Gaming Zone Devs', icon: 'server-icon-2', owner: false, bot_in: true },
+            { id: '1003', name: 'Cool Friends Only', icon: 'server-icon-3', owner: true, bot_in: true },
+            { id: '1004', name: 'Personal Hangout (No Bot)', icon: 'server-icon-4', owner: false, bot_in: false },
+            { id: '1005', name: 'Creative World', icon: 'server-icon-5', owner: true, bot_in: true },
+        ].filter(g => g.owner || g.bot_in); // Filter to show only guilds the user owns OR the bot is in
+
+        /**
+         * Simulates fetching global bot statistics.
+         * @returns {Promise<object>} Bot stats object.
+         */
+        function fetchBotStats() {
+            return new Promise(resolve => {
+                setTimeout(() => resolve(MOCK_BOT_STATS), 500); // Simulate network delay
             });
-            if (element) {
-                element.classList.add('active');
-            } else {
-                // Initial load logic: find the correct button
-                const initialButton = document.querySelector(`.guild-button[onclick*="'${guildId}'"]`);
-                if (initialButton) initialButton.classList.add('active');
-            }
-            
-            // FETCH SETTINGS from the Flask backend API
+        }
+
+        /**
+         * Simulates fetching the list of servers the user is in and the bot is in.
+         * @returns {Promise<Array<object>>} List of user's guilds.
+         */
+        function fetchUserGuilds() {
+            return new Promise(resolve => {
+                setTimeout(() => resolve(MOCK_GUILDS), 1000); // Simulate network delay
+            });
+        }
+
+        // --- Core UI Management Functions ---
+
+        /**
+         * Simulates the Discord OAuth2 login process.
+         * In a real app, this redirects the user to Discord.
+         */
+        function mockDiscordLogin() {
+            loginMessage.textContent = "Redirecting to Discord authorization page...";
+            document.getElementById('loginButton').disabled = true;
+
+            // In a real application, you would use:
+            // window.location.href = DISCORD_AUTH_URL;
+            console.log("--- DISCORD AUTHORIZATION URL (Use this in a real browser) ---");
+            console.log(DISCORD_AUTH_URL);
+            console.log("---------------------------------------------------------------");
+
+            // Mock the redirect and subsequent token exchange success
+            setTimeout(() => {
+                isAuthenticated = true;
+                loginMessage.textContent = "Mock login successful. Loading dashboard...";
+                document.getElementById('loginButton').disabled = false;
+                showLoading();
+                loadDashboardData();
+            }, 1500);
+        }
+
+        /**
+         * Logs the user out.
+         */
+        function logout() {
+            isAuthenticated = false;
+            // Clear any local tokens/session data here in a real app
+            loginView.classList.remove('hidden');
+            dashboardView.classList.add('hidden');
+            logoutButton.classList.add('hidden');
+            serverDetail.classList.add('hidden');
+            showLogin();
+        }
+
+        /**
+         * Displays the loading state.
+         */
+        function showLoading() {
+            loginView.classList.add('hidden');
+            dashboardView.classList.add('hidden');
+            logoutButton.classList.add('hidden');
+            loadingIndicator.classList.remove('hidden');
+        }
+
+        /**
+         * Displays the login state.
+         */
+        function showLogin() {
+            loginView.classList.remove('hidden');
+            dashboardView.classList.add('hidden');
+            logoutButton.classList.add('hidden');
+            loadingIndicator.classList.add('hidden');
+            loginMessage.textContent = "Your Client ID is now configured.";
+        }
+
+
+        /**
+         * Loads and renders the dashboard data.
+         */
+        async function loadDashboardData() {
             try {
-                const response = await fetch(`/api/settings/${guildId}`);
-                if (response.status === 401 || response.status === 403) {
-                    throw new Error("Unauthorized or Permission Denied.");
-                }
-                const data = await response.json();
+                const [stats, guilds] = await Promise.all([
+                    fetchBotStats(),
+                    fetchUserGuilds()
+                ]);
+
+                renderGlobalStats(stats);
+                renderGuildsList(guilds.filter(g => g.bot_in)); // Only show servers with the bot
                 
-                if (data.success) {
-                    populateForms(data.settings);
-                    console.log(`Settings loaded for ${guildName}.`);
-                } else {
-                    alert('Error loading settings: ' + data.error);
-                }
+                showDashboard();
             } catch (error) {
-                console.error('Fetch error:', error);
-                alert('Could not load settings for this server. Please try logging in again.');
+                console.error("Error loading dashboard data:", error);
+                // Handle error gracefully on UI
+                loginMessage.textContent = "Error loading data. Please try again.";
+                showLogin();
             }
         }
 
-        // Handles saving form data
-        async function saveSettings(event, feature) {
-            event.preventDefault(); 
-            
-            if (!selectedGuildId) {
-                alert('Please select a server first.');
+        /**
+         * Switches the view to the main dashboard (stats and server list).
+         */
+        function showDashboard() {
+            loadingIndicator.classList.add('hidden');
+            loginView.classList.add('hidden');
+            serverDetail.classList.add('hidden');
+            dashboardView.classList.remove('hidden');
+            logoutButton.classList.remove('hidden');
+        }
+
+        /**
+         * Switches the view to a specific server's detail page.
+         * @param {string} guildId - The ID of the server.
+         * @param {string} guildName - The name of the server.
+         */
+        function showServerDetail(guildId, guildName) {
+            dashboardView.classList.add('hidden');
+            serverDetail.classList.remove('hidden');
+
+            detailHeader.textContent = `Server Dashboard: ${guildName}`;
+            detailGuildId.textContent = guildId;
+
+            // In a real app, you would fetch server-specific settings here
+            console.log(`Navigating to dashboard for Guild ID: ${guildId}`);
+        }
+
+        // --- Rendering Functions ---
+
+        /**
+         * Renders the global bot statistics.
+         * @param {object} stats - Bot statistics.
+         */
+        function renderGlobalStats(stats) {
+            globalStatsContainer.innerHTML = `
+                ${createStatCard('Bot Servers', stats.servers.toLocaleString(), 'bg-green-500')}
+                ${createStatCard('Total Users', stats.users.toLocaleString(), 'bg-blue-500')}
+            `;
+        }
+
+        /**
+         * Creates an HTML string for a single statistic card.
+         * @param {string} title - Card title.
+         * @param {string} value - Card value.
+         * @param {string} colorClass - Tailwind background color class.
+         * @returns {string} HTML string for the card.
+         */
+        function createStatCard(title, value, colorClass) {
+            return `
+                <div class="dashboard-card p-6 flex items-center">
+                    <div class="p-3 rounded-full ${colorClass} mr-4">
+                        <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            ${title.includes('Servers') ? '<path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-4 4v-4H4a2 2 0 01-2-2V5z"></path>' : '<path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>'}
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-textmuted">${title}</p>
+                        <p class="text-3xl font-bold text-textlight">${value}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        /**
+         * Renders the list of guilds (servers).
+         * @param {Array<object>} guilds - List of guild objects.
+         */
+        function renderGuildsList(guilds) {
+            guildsListContainer.innerHTML = '';
+
+            if (guilds.length === 0) {
+                noGuildsMessage.classList.remove('hidden');
                 return;
             }
 
-            const formData = new FormData(event.target);
-            const settings = {};
-            formData.forEach((value, key) => { settings[key] = value; });
+            noGuildsMessage.classList.add('hidden');
 
-            // Collect checkbox status separately
-            if (feature === 'moderation') {
-                settings['filter-status'] = document.getElementById('filter-status').checked;
-            }
-
-            // SEND SETTINGS to the Flask backend API
-            try {
-                const response = await fetch('/api/save_settings', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        guild_id: selectedGuildId, 
-                        feature: feature, 
-                        settings: settings 
-                    })
-                });
-
-                const result = await response.json();
-                
-                if (result.success) {
-                    alert(`${feature} settings saved successfully for ${selectedGuildName}!`);
-                } else {
-                    alert(`Error saving ${feature} settings: ${result.error}`);
-                }
-            } catch (error) {
-                console.error('Network Error:', error);
-                alert('An unexpected error occurred while saving.');
-            }
-        }
-        
-        // Switches the active feature panel
-        function showPanel(panelId, tabElement) {
-            document.querySelectorAll('.feature-panel').forEach(panel => {
-                panel.classList.remove('active');
+            guilds.forEach(guild => {
+                const ownerText = guild.owner ? '<span class="text-xs font-semibold px-2 py-1 rounded-full bg-yellow-600 text-yellow-100 ml-2">OWNER</span>' : '';
+                const guildCard = document.createElement('div');
+                guildCard.className = 'dashboard-card p-4 flex justify-between items-center transition duration-200 hover:ring-2 hover:ring-discord';
+                guildCard.innerHTML = `
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-discord rounded-full flex items-center justify-center text-white text-lg font-bold mr-4">
+                            ${guild.name.charAt(0)}
+                        </div>
+                        <div>
+                            <p class="text-lg font-semibold text-textlight flex items-center">
+                                ${guild.name} ${ownerText}
+                            </p>
+                            <p class="text-sm text-textmuted">ID: ${guild.id}</p>
+                        </div>
+                    </div>
+                    <button class="bg-discord hover:bg-discorddark text-white font-semibold py-2 px-4 rounded-lg shadow transition duration-200"
+                        onclick="showServerDetail('${guild.id}', '${guild.name.replace(/'/g, "\\'")}')">
+                        Go to Dashboard
+                    </button>
+                `;
+                guildsListContainer.appendChild(guildCard);
             });
-            document.getElementById(panelId + '-panel').classList.add('active');
-
-            document.querySelectorAll('.nav-tabs button').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            tabElement.classList.add('active');
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-             // If Flask has provided the initial guild ID, load its settings automatically.
-             if (initialGuildId) {
-                 const initialButton = document.querySelector(`.guild-button[onclick*="'${initialGuildId}'"]`);
-                 if (initialButton) {
-                     const guildName = Array.from(initialButton.childNodes)
-                                         .filter(node => node.nodeType === 3)
-                                         .map(node => node.textContent.trim())
-                                         .join('');
-                     
-                     selectServer(initialGuildId, guildName, initialButton);
-                 }
-             }
-        });
+        // --- Initialization ---
+
+        // Check if user is theoretically authenticated (e.g., from a session cookie in a real app)
+        // For this mock, we start on the login screen.
+        window.onload = () => {
+             // Start the app on the login screen
+             showLogin();
+        };
+
     </script>
-
 </body>
 </html>
