@@ -1,4 +1,5 @@
 import os
+import time
 from flask import Flask, request, jsonify, render_template, redirect, url_for, session
 from google import genai
 from google.genai.errors import APIError
@@ -24,11 +25,22 @@ client = genai.Client(api_key=API_KEY)
 VALID_USERNAME = os.getenv("LOGIN_USERNAME")
 VALID_PASSWORD = os.getenv("LOGIN_PASSWORD")
 
+
+# --- RATE LIMITING CONFIGURATION ---
+# IMPORTANT: Adjust these values based on your API usage needs
+MAX_DAILY_CALLS = 10  # Set a low limit for testing, increase later (e.g., 500)
+CALL_WINDOW_SECONDS = 86400 # 24 hours (60 * 60 * 24)
+
+# Global variables to track usage across the *entire* application instance
+global_usage_count = 0
+global_reset_time = time.time() + CALL_WINDOW_SECONDS
+
+
 # --- ROUTES ---
 
 @app.route('/')
 def index():
-    """Renders the main solver page if logged in, otherwise redirects to login."""
+    # ... (login check remains the same) ...
     if 'logged_in' not in session or not session['logged_in']:
         return redirect(url_for('login'))
     
@@ -36,7 +48,7 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    """Handles the user login form."""
+    # ... (login logic remains the same) ...
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -52,7 +64,9 @@ def login():
 
 @app.route('/solve', methods=['POST'])
 def solve_query():
-    """Handles the user's query by sending it to the Gemini API."""
+    global global_usage_count
+    global global_reset_time
+
     if 'logged_in' not in session or not session['logged_in']:
         return jsonify({"answer": "Access Denied. Please log in first."}), 401
         
@@ -62,26 +76,51 @@ def solve_query():
     if not user_query:
         return jsonify({"answer": "Please enter a question."})
 
-    # --- 1. Prepare Content for Gemini (Text-Only) ---
+    # --- RATE LIMIT CHECK ---
+    current_time = time.time()
+
+    # 1. Reset the counter if the time window has passed
+    if current_time >= global_reset_time:
+        global_usage_count = 0
+        global_reset_time = current_time + CALL_WINDOW_SECONDS
+        print("API usage counter reset.")
+
+    # 2. Check if the current limit has been reached
+    if global_usage_count >= MAX_DAILY_CALLS:
+        # Calculate time remaining until reset
+        time_remaining = int(global_reset_time - current_time)
+        hours = time_remaining // 3600
+        minutes = (time_remaining % 3600) // 60
+        
+        limit_message = (
+            f"API usage limit reached (Max: {MAX_DAILY_CALLS}). "
+            f"Please wait {hours} hours and {minutes} minutes."
+        )
+        return jsonify({"answer": limit_message})
+    
+    # If limit is not reached, increment the counter
+    global_usage_count += 1
+    print(f"API Call #{global_usage_count} made.")
+    # -------------------------
+
+
+    # --- API CALL EXECUTION ---
     content = [user_query]
     
-    # --- 2. Define System Instruction & Config (ULTIMATE CONCISENESS) ---
     system_instruction = (
         "You are a concise, final answer solver. "
         "When presented with a question, especially a math problem, "
         "respond only with the final answer as a raw mathematical expression. "
         "Do not include step-by-step reasoning, introductory phrases, or concluding sentences. "
-        "Crucially, use proper mathematical symbols (e.g., +, -, \\times, \\div, \^ or exponents) for all operations. "
-        "Do NOT use the \\boxed{} command. Use standard parentheses () instead of curly braces {} for grouping."
+        "Crucially, use proper mathematical symbols (e.g., +, -, \\times, \\div, ^ or exponents) for all operations. "
+        "Do NOT use the \\boxed command. Use standard parentheses () instead of curly braces {} for grouping."
     )
 
-    # Use the 'config' dictionary to pass system instructions
     config = {
         "system_instruction": system_instruction
     }
 
     try:
-        # Call the Gemini API using the 'config' parameter
         response = client.models.generate_content(
             model='gemini-2.5-flash',
             contents=content,
@@ -92,16 +131,19 @@ def solve_query():
 
     except APIError as e:
         print(f"Gemini API Error: {e}")
-        return jsonify({"answer": "An API error occurred. Check the server console."})
+        # NOTE: If a real API error occurs, we don't decrement the counter, 
+        # as the call was attempted.
+        return jsonify({"answer": "An API error occurred. Unable to process the request."})
     except Exception as e:
         print(f"Server Error: {e}")
         return jsonify({"answer": "A server error occurred. Unable to process the request."})
 
 @app.route('/logout')
 def logout():
-    """Removes the logged_in flag from the session."""
+    # ... (logout logic remains the same) ...
     session.pop('logged_in', None)
     return redirect(url_for('login'))
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # NOTE: Set threaded=False for local testing if using global vars
+    app.run(debug=True, threaded=False)
