@@ -1,4 +1,7 @@
 import os
+import io # <-- NEW: For handling image data in memory
+import base64 # <-- NEW: For decoding the Base64 image string
+from PIL import Image # <-- NEW: For creating the image object
 from flask import Flask, request, jsonify, render_template, redirect, url_for, session
 from google import genai
 from google.genai.errors import APIError
@@ -10,19 +13,17 @@ load_dotenv()
 app = Flask(__name__)
 
 # --- CONFIGURATION: LOAD FROM .env ---
-
-# 1. Flask Secret Key (Essential for sessions/login security)
 app.secret_key = os.getenv("FLASK_SECRET_KEY")
 if not app.secret_key:
     raise ValueError("FLASK_SECRET_KEY not found. Check your .env file.")
 
-# 2. Gemini API Client Setup
+# GEMINI API CLIENT SETUP
 API_KEY = os.getenv("GEMINI_API_KEY")
 if not API_KEY:
     raise ValueError("GEMINI_API_KEY not found. Please check your .env file.")
 client = genai.Client(api_key=API_KEY)
 
-# 3. Login Credentials
+# Login Credentials
 VALID_USERNAME = os.getenv("LOGIN_USERNAME")
 VALID_PASSWORD = os.getenv("LOGIN_PASSWORD")
 
@@ -30,7 +31,6 @@ VALID_PASSWORD = os.getenv("LOGIN_PASSWORD")
 
 @app.route('/')
 def index():
-    """Renders the main solver page if logged in, otherwise redirects to login."""
     if 'logged_in' not in session or not session['logged_in']:
         return redirect(url_for('login'))
     
@@ -38,12 +38,10 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    """Handles the user login form."""
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
 
-        # Check credentials loaded from .env
         if username == VALID_USERNAME and password == VALID_PASSWORD:
             session['logged_in'] = True
             return redirect(url_for('index'))
@@ -51,27 +49,47 @@ def login():
             error = 'Invalid Credentials. Please try again.'
             return render_template('login.html', error=error)
             
-    # For GET requests, show the login form
     return render_template('login.html')
 
 @app.route('/solve', methods=['POST'])
 def solve_query():
-    """Handles the user's query by sending it to the Gemini API."""
-    # Security check: Ensure the user is logged in before allowing AI usage
     if 'logged_in' not in session or not session['logged_in']:
         return jsonify({"answer": "Access Denied. Please log in first."}), 401
         
     data = request.get_json()
     user_query = data.get('query', '').strip()
+    image_data_b64 = data.get('image_data') # <-- Get Base64 image string
 
-    if not user_query:
-        return jsonify({"answer": "Please enter a question or equation."})
+    # Check for empty input (must have text OR image)
+    if not user_query and not image_data_b64:
+        return jsonify({"answer": "Please enter a question or upload an image."})
+
+    # --- 1. Prepare Content for Gemini ---
+    content = []
+    
+    # If image data exists, decode it
+    if image_data_b64:
+        try:
+            # Decode the base64 string into bytes
+            image_bytes = base64.b64decode(image_data_b64)
+            # Create a PIL Image object from the bytes
+            img = Image.open(io.BytesIO(image_bytes))
+            
+            # Add the image object to the content list
+            content.append(img)
+        except Exception as e:
+            print(f"Image Decoding Error: {e}")
+            return jsonify({"answer": "Error processing image. Is it a valid image file?"})
+
+    # If there is a text query, add it to the content list
+    if user_query:
+        content.append(user_query)
 
     try:
-        # Call the Gemini API
+        # Use the same model for multimodal requests
         response = client.models.generate_content(
             model='gemini-2.5-flash',
-            contents=[user_query]
+            contents=content # This list can contain [Image, Text] or just [Text]
         )
         ai_answer = response.text.strip()
         return jsonify({"answer": ai_answer})
@@ -85,7 +103,6 @@ def solve_query():
 
 @app.route('/logout')
 def logout():
-    """Removes the logged_in flag from the session."""
     session.pop('logged_in', None)
     return redirect(url_for('login'))
 
