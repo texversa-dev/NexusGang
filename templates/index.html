@@ -6,7 +6,7 @@
     <title>AI Solver (Powered by Gemini & Flask)</title>
     <style>
         body {
-            /* Gray background color: #cccccc */
+            /* Gray background color */
             background-color: #cccccc; 
             font-family: Arial, sans-serif;
             display: flex;
@@ -19,7 +19,6 @@
         .container {
             background-color: white;
             padding: 30px;
-            /* Round corners */
             border-radius: 15px; 
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
             width: 90%;
@@ -30,7 +29,6 @@
         /* --- Input Area Styling --- */
         #input-area {
             border: 2px dashed #999;
-            /* Round corners */
             border-radius: 10px; 
             padding: 20px;
             margin-bottom: 20px;
@@ -50,7 +48,6 @@
             color: white;
             border: none;
             cursor: pointer;
-            /* Round corners */
             border-radius: 8px; 
             font-size: 1em;
             font-weight: bold;
@@ -67,7 +64,6 @@
             margin-top: 25px;
             padding: 15px;
             border: 2px solid #888;
-            /* Round corners */
             border-radius: 10px; 
             background-color: #f0f0f0;
             min-height: 50px;
@@ -116,12 +112,12 @@
     const placeholderText = document.getElementById('placeholder-text');
     const submitButton = document.getElementById('submit-button');
 
-    // Remove placeholder text when the user clicks or starts typing
+    // Focus handler
     inputArea.addEventListener('focus', () => {
         if (placeholderText) placeholderText.style.display = 'none';
     });
     
-    // Simple paste handler to ensure only plain text is sent to the AI
+    // Paste handler (ensures only plain text is sent)
     inputArea.addEventListener('paste', function(e) {
         e.preventDefault(); 
         const text = e.clipboardData.getData('text/plain');
@@ -142,7 +138,7 @@
         submitButton.disabled = true;
 
         try {
-            // Use fetch to communicate with the /solve route in app.py
+            // Send request to the Python server's /solve route
             const response = await fetch('/solve', {
                 method: 'POST',
                 headers: {
@@ -151,20 +147,18 @@
                 body: JSON.stringify({ query: userInput })
             });
 
-            if (!response.ok) {
-                // If the server returns a 401 Unauthorized or other error
-                const errorData = await response.json();
-                throw new Error(errorData.answer || `HTTP error! Status: ${response.status}`);
-            }
-
             const data = await response.json();
             
-            // Display the AI's answer, which is bolded by the .answer-text CSS
+            if (!response.ok) {
+                // If the server returns a non-200 status (like 401), display the error message from Flask
+                throw new Error(data.answer || `Server error! Status: ${response.status}`);
+            }
+            
+            // Display the successful AI answer
             outputElement.innerHTML = `The answer is: <span style="color: #007bff;">${data.answer}</span>`;
 
         } catch (error) {
             console.error('Error fetching data:', error);
-            // Display any error message received from the server
             outputElement.innerHTML = `The answer is: <span style="color: red;">${error.message || "Failed to connect to the server."}</span>`;
         } finally {
             submitButton.disabled = false; // Re-enable the button

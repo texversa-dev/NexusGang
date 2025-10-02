@@ -10,19 +10,19 @@ load_dotenv()
 app = Flask(__name__)
 
 # --- CONFIGURATION: LOAD FROM .env ---
-app.secret_key = os.getenv("FLASK_SECRET_KEY")
 
-# Check for essential keys
+# 1. Flask Secret Key (Essential for sessions/login security)
+app.secret_key = os.getenv("FLASK_SECRET_KEY")
 if not app.secret_key:
     raise ValueError("FLASK_SECRET_KEY not found. Check your .env file.")
 
-# 1. GEMINI API CLIENT SETUP
+# 2. Gemini API Client Setup
 API_KEY = os.getenv("GEMINI_API_KEY")
 if not API_KEY:
     raise ValueError("GEMINI_API_KEY not found. Please check your .env file.")
 client = genai.Client(api_key=API_KEY)
 
-# 2. LOGIN CREDENTIALS
+# 3. Login Credentials
 VALID_USERNAME = os.getenv("LOGIN_USERNAME")
 VALID_PASSWORD = os.getenv("LOGIN_PASSWORD")
 
@@ -30,17 +30,15 @@ VALID_PASSWORD = os.getenv("LOGIN_PASSWORD")
 
 @app.route('/')
 def index():
-    """Renders the main page, but first checks if the user is logged in."""
+    """Renders the main solver page if logged in, otherwise redirects to login."""
     if 'logged_in' not in session or not session['logged_in']:
-        # If not logged in, redirect them to the login page
         return redirect(url_for('login'))
     
-    # If logged in, show the AI solver template
     return render_template('index.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    """Handles the login form."""
+    """Handles the user login form."""
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -58,8 +56,8 @@ def login():
 
 @app.route('/solve', methods=['POST'])
 def solve_query():
-    """Handles the user's request, but only if they are logged in."""
-    # Security check for session
+    """Handles the user's query by sending it to the Gemini API."""
+    # Security check: Ensure the user is logged in before allowing AI usage
     if 'logged_in' not in session or not session['logged_in']:
         return jsonify({"answer": "Access Denied. Please log in first."}), 401
         
@@ -87,7 +85,7 @@ def solve_query():
 
 @app.route('/logout')
 def logout():
-    """Logs the user out."""
+    """Removes the logged_in flag from the session."""
     session.pop('logged_in', None)
     return redirect(url_for('login'))
 
