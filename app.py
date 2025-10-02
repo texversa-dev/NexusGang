@@ -82,7 +82,7 @@ def solve_query():
     if user_query:
         content.append(user_query)
     
-    # --- 2. Define System Instruction (To enforce concise answers) ---
+    # --- 2. Define System Instruction & Config (FIXED FOR MODERN SDK) ---
     system_instruction = (
         "You are a concise, final answer solver. "
         "When presented with a question, especially a math problem, "
@@ -91,12 +91,17 @@ def solve_query():
         "If the answer is a mathematical expression, use the correct LaTeX formatting (e.g., \\boxed{\\text{your answer}})."
     )
 
+    # FIX: Use the 'config' dictionary to pass system instructions
+    config = {
+        "system_instruction": system_instruction
+    }
+
     try:
-        # Call the Gemini API with the new instruction
+        # Call the Gemini API using the 'config' parameter
         response = client.models.generate_content(
             model='gemini-2.5-flash',
             contents=content,
-            system_instruction=system_instruction
+            config=config  # <-- Corrected parameter name
         )
         ai_answer = response.text.strip()
         return jsonify({"answer": ai_answer})
