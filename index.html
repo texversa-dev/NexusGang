@@ -3,604 +3,161 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NexusTeam Staff Dashboard</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        // Configure Tailwind to use the Inter font and enable customizations
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
-                    colors: {
-                        'nexus-blue': '#1e88e5',
-                        'nexus-dark': '#1565c0',
-                        'mod-warn': '#ffc107',
-                        'mod-kick': '#ff9800',
-                        'mod-ban': '#f44336',
-                        'shift-active': '#4caf50',
-                        'shift-break': '#ff9800',
-                        'shift-offline': '#9e9e9e',
-                    }
-                }
-            }
+    <title>AI Solver (Powered by Gemini & Flask)</title>
+    <style>
+        body {
+            /* Gray background color */
+            background-color: #cccccc; 
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
         }
-    </script>
+
+        .container {
+            background-color: white;
+            padding: 30px;
+            /* Round corners */
+            border-radius: 15px; 
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        /* --- Input Area Styling --- */
+        #input-area {
+            border: 2px dashed #999;
+            /* Round corners */
+            border-radius: 10px; 
+            padding: 20px;
+            margin-bottom: 20px;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-style: italic;
+            color: #666;
+            text-align: center;
+        }
+
+        #submit-button {
+            padding: 10px 20px;
+            background-color: #333333;
+            color: white;
+            border: none;
+            cursor: pointer;
+            /* Round corners */
+            border-radius: 8px; 
+            font-size: 1em;
+            font-weight: bold;
+            transition: background-color 0.2s;
+            margin-bottom: 20px;
+        }
+
+        #submit-button:hover {
+            background-color: #555555;
+        }
+
+        /* Output Styling */
+        #answer-area {
+            margin-top: 25px;
+            padding: 15px;
+            border: 2px solid #888;
+            /* Round corners */
+            border-radius: 10px; 
+            background-color: #f0f0f0;
+            min-height: 50px;
+            text-align: left;
+        }
+
+        .answer-text {
+            /* Bolded text for the answer */
+            font-weight: bold; 
+            font-size: 1.2em;
+            color: #1a1a1a;
+        }
+    </style>
 </head>
-<body class="bg-gray-100 font-sans min-h-screen flex items-start justify-center p-4">
-    <div id="app-container" class="w-full max-w-6xl bg-white rounded-xl shadow-2xl overflow-hidden mt-6">
+<body>
 
-        <h1 class="text-4xl font-extrabold text-white bg-nexus-blue p-6 mb-0 text-center">
-            NexusTeam Staff Portal
-        </h1>
+<div class="container">
+    <h2>Enter Your Query or Equation</h2>
 
-        <!-- #################################### -->
-        <!-- 1. LOGIN SCREEN -->
-        <!-- #################################### -->
-        <div id="login-screen" class="p-10">
-            <div class="max-w-md mx-auto p-6 bg-gray-50 rounded-lg shadow-md">
-                <p class="text-gray-600 mb-6 text-center">Access requires team credentials.</p>
-                <form id="loginForm" class="space-y-4">
-                    <div>
-                        <input type="text" id="username" placeholder="Username (NexusTeam)" required 
-                               class="w-full p-3 border border-gray-300 rounded-lg focus:ring-nexus-blue focus:border-nexus-blue transition">
-                    </div>
-                    <div>
-                        <input type="password" id="password" placeholder="Password (Nexus)" required 
-                               class="w-full p-3 border border-gray-300 rounded-lg focus:ring-nexus-blue focus:border-nexus-blue transition">
-                    </div>
-                    <button type="submit" class="w-full py-3 bg-nexus-blue text-white font-bold rounded-lg hover:bg-nexus-dark transition">
-                        Login Securely
-                    </button>
-                    <p id="loginError" class="text-red-500 font-medium mt-3 hidden text-center">Invalid Username or Password.</p>
-                </form>
-            </div>
-        </div>
-
-        <!-- #################################### -->
-        <!-- 2. DISCORD NAME PROMPT -->
-        <!-- #################################### -->
-        <div id="discord-prompt-screen" class="hidden p-10">
-            <div class="max-w-md mx-auto p-6 bg-yellow-50 border-l-4 border-yellow-500 rounded-lg shadow-md">
-                <h3 class="text-2xl font-semibold text-yellow-800 mb-4">Identify Yourself</h3>
-                <p class="text-gray-700 mb-6">Please enter your exact Discord username for shift logging purposes.</p>
-                <form id="discordPromptForm" class="space-y-4">
-                    <div>
-                        <input type="text" id="discordUsername" placeholder="Your Discord Username (e.g., NexusUser#1234)" required 
-                               class="w-full p-3 border border-gray-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500 transition">
-                    </div>
-                    <button type="submit" class="w-full py-3 bg-yellow-600 text-white font-bold rounded-lg hover:bg-yellow-700 transition">
-                        Confirm & Enter Dashboard
-                    </button>
-                </form>
-            </div>
-        </div>
-
-        <!-- #################################### -->
-        <!-- 3. MAIN DASHBOARD WITH TABS -->
-        <!-- #################################### -->
-        <div id="dashboard-screen" class="hidden p-6 md:p-10">
-            
-            <div class="flex justify-between items-center pb-4 border-b border-gray-200 mb-4">
-                <p class="text-sm text-gray-500">
-                    Staff: <span id="display-discord-username" class="font-semibold text-nexus-blue">...</span> 
-                    (ID: <span id="display-user-id" class="text-xs text-gray-400">...</span>)
-                </p>
-                <button onclick="logout()" class="py-2 px-4 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600 transition">
-                    Logout
-                </button>
-            </div>
-
-            <!-- TAB NAVIGATION -->
-            <div class="border-b border-gray-200">
-                <nav class="flex space-x-2 md:space-x-8" id="dashboard-tabs">
-                    <button id="tab-shifts" onclick="switchTab('shifts')" class="tab-button py-2 px-4 md:px-6 font-medium text-center text-sm md:text-base border-b-2 border-nexus-blue text-nexus-blue transition duration-300">
-                        <span class="hidden md:inline">🕰️</span> Shift Management
-                    </button>
-                    <button id="tab-modlogs" onclick="switchTab('modlogs')" class="tab-button py-2 px-4 md:px-6 font-medium text-center text-sm md:text-base border-b-2 border-transparent text-gray-500 hover:text-nexus-blue transition duration-300">
-                        <span class="hidden md:inline">🚨</span> Moderation Logs
-                    </button>
-                </nav>
-            </div>
-
-            <!-- TAB CONTENT CONTAINER -->
-            <div class="mt-8">
-                
-                <!-- 3A. SHIFT MANAGEMENT CONTENT -->
-                <div id="shift-management-content" class="tab-content grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    
-                    <!-- COLUMN 1: SHIFT CONTROLS -->
-                    <div class="lg:col-span-1 bg-white p-6 rounded-xl shadow-lg border border-nexus-blue/20 h-full">
-                        <h3 class="text-xl font-bold mb-4 flex items-center text-nexus-blue">
-                            Shift Controls
-                        </h3>
-
-                        <!-- Current Status -->
-                        <div class="text-center p-4 rounded-lg mb-4" id="shift-status-display">
-                            <p class="text-sm font-medium text-gray-600">Your Status</p>
-                            <p class="text-3xl font-extrabold text-shift-offline">Offline</p>
-                        </div>
-
-                        <!-- Shift Buttons -->
-                        <div id="shift-buttons" class="space-y-2">
-                            <!-- Buttons will be rendered by JS based on current status -->
-                        </div>
-                    </div>
-
-                    <!-- COLUMN 2: ACTIVE SHIFTS LIST -->
-                    <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-lg border border-nexus-blue/20">
-                        <h3 class="text-xl font-bold mb-4 text-nexus-blue">Active Shifts List</h3>
-                        <div id="active-shifts-list" class="space-y-2 max-h-96 overflow-y-auto">
-                            <p class="text-gray-500">Loading active shifts...</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 3B. MODERATION LOGS CONTENT -->
-                <div id="mod-logs-content" class="tab-content hidden grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-                    <!-- COLUMN 1: LOG MODERATION ACTION FORM -->
-                    <div class="bg-white p-6 rounded-xl shadow-lg border border-mod-ban/20">
-                        <h3 class="text-xl font-bold mb-4 flex items-center text-mod-ban">
-                            Log New Action
-                        </h3>
-                        <form id="modLogForm" class="space-y-4">
-                            <div class="flex space-x-4">
-                                <select id="actionType" required class="w-1/3 p-3 border border-gray-300 rounded-lg focus:ring-mod-ban focus:border-mod-ban transition bg-white">
-                                    <option value="" disabled selected>Select Action</option>
-                                    <option value="Warn">Warn</option>
-                                    <option value="Kick">Kick</option>
-                                    <option value="Ban">Ban</option>
-                                </select>
-                                <input type="text" id="targetUser" placeholder="Target User (e.g., @User#1234)" required 
-                                       class="w-2/3 p-3 border border-gray-300 rounded-lg focus:ring-mod-ban focus:border-mod-ban transition">
-                            </div>
-                            <textarea id="reason" placeholder="Reason for action (REQUIRED)" required rows="3" 
-                                      class="w-full p-3 border border-gray-300 rounded-lg focus:ring-mod-ban focus:border-mod-ban transition"></textarea>
-                            
-                            <button type="submit" class="w-full py-3 bg-mod-ban text-white font-bold rounded-lg hover:bg-red-700 transition">
-                                Submit Log Entry
-                            </button>
-                        </form>
-                    </div>
-
-                    <!-- COLUMN 2: RECENT MODERATION LOGS -->
-                    <div class="bg-white p-6 rounded-xl shadow-lg border border-mod-ban/20">
-                        <h3 class="text-xl font-bold mb-4 text-mod-ban">Recent Action Log (Last 10)</h3>
-                        <div id="recent-mod-logs" class="space-y-2 max-h-96 overflow-y-auto">
-                            <p class="text-gray-500">Loading recent logs...</p>
-                        </div>
-                    </div>
-
-                </div>
-
-            </div>
-        </div>
+    <div id="input-area" contenteditable="true" placeholder="Type complex algebra, history questions, or random facts here.">
+        <p id="placeholder-text">Type your question here (e.g., "Who invented calculus?" or "3x + 5 = 14").</p>
     </div>
 
-    <!-- Firebase SDKs -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot, collection, query, addDoc, serverTimestamp, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    <button id="submit-button" onclick="getAnswer()">Get Answer</button>
 
-        // IMPORTANT: Global variables provided by the Canvas environment
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+    <div id="answer-area">
+        <p class="answer-text" id="answer-output">
+            The answer will appear here.
+        </p>
+    </div>
+</div>
 
-        // Static Credentials for the initial access gate
-        const REQUIRED_USERNAME = "NexusTeam";
-        const REQUIRED_PASSWORD = "Nexus";
+<script>
+    const inputArea = document.getElementById('input-area');
+    const outputElement = document.getElementById('answer-output');
+    const placeholderText = document.getElementById('placeholder-text');
+    const submitButton = document.getElementById('submit-button');
+
+    // Remove placeholder text when the user clicks or starts typing
+    inputArea.addEventListener('focus', () => {
+        if (placeholderText) placeholderText.style.display = 'none';
+    });
+    
+    // Simple paste handler to ensure only plain text is sent to the AI
+    inputArea.addEventListener('paste', function(e) {
+        e.preventDefault(); 
+        const text = e.clipboardData.getData('text/plain');
+        document.execCommand('insertText', false, text);
+    });
+
+    // --- MAIN AI LOGIC: Sends Query to Flask Server ---
+    async function getAnswer() {
+        const userInput = inputArea.textContent.trim();
         
-        let app, db, auth;
-        let userId = null;
-        let discordUsername = null;
-        let currentShiftStatus = 'Offline';
+        if (!userInput) {
+            outputElement.innerHTML = `The answer is: <span style="color: red;">Please enter a query.</span>`;
+            return;
+        }
 
-        // --- TAB SWITCHING LOGIC ---
-        window.switchTab = function(tabName) {
-            const tabs = {
-                'shifts': document.getElementById('shift-management-content'),
-                'modlogs': document.getElementById('mod-logs-content')
-            };
+        // Show a loading message and disable button
+        outputElement.innerHTML = `The answer is: <span style="color: #666;">Thinking... (Waiting for Python Server)</span>`;
+        submitButton.disabled = true;
 
-            // Hide all content and reset tab styling
-            Object.keys(tabs).forEach(key => {
-                tabs[key].classList.add('hidden');
-                document.getElementById(`tab-${key}`).classList.remove('border-nexus-blue', 'text-nexus-blue');
-                document.getElementById(`tab-${key}`).classList.add('border-transparent', 'text-gray-500');
+        try {
+            // Use fetch to communicate with the /solve route in app.py
+            const response = await fetch('/solve', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ query: userInput })
             });
 
-            // Show selected content and set active tab styling
-            tabs[tabName].classList.remove('hidden');
-            tabs[tabName].style.display = 'grid'; // Ensure grid display property is set for layout
-            document.getElementById(`tab-${tabName}`).classList.add('border-nexus-blue', 'text-nexus-blue');
-            document.getElementById(`tab-${tabName}`).classList.remove('border-transparent', 'text-gray-500');
-        }
-        
-        // --- FIREBASE INITIALIZATION AND AUTHENTICATION ---
-        async function initializeFirebase() {
-            setLogLevel('Debug'); // Enable debug logging for Firestore
-            try {
-                app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-
-                // Sign in using the provided custom token or anonymously
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                    console.log("Signed in with Custom Token.");
-                } else {
-                    await signInAnonymously(auth);
-                    console.log("Signed in anonymously.");
-                }
-
-                // Wait for auth state change
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        userId = user.uid;
-                        // Start the initial view based on whether static login has occurred
-                        checkStaticLogin();
-                    } else {
-                        // User logged out
-                        userId = null;
-                        showScreen('login-screen');
-                    }
-                });
-
-            } catch (error) {
-                console.error("Firebase initialization or authentication failed:", error);
-                // Handle the UI error display
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
-        }
-        
-        // --- SCREEN MANAGEMENT ---
-        function showScreen(screenId) {
-            const screens = ['login-screen', 'discord-prompt-screen', 'dashboard-screen'];
-            screens.forEach(id => {
-                document.getElementById(id).classList.add('hidden');
-                document.getElementById(id).style.display = 'none';
-            });
-            document.getElementById(screenId).classList.remove('hidden');
-            document.getElementById(screenId).style.display = 'block'; // Use block for main screens
-        }
 
-        // --- STATIC LOGIN GATE ---
-        function checkStaticLogin() {
-            const storedDiscordName = sessionStorage.getItem('discordUsername');
-            const storedStaticLogin = sessionStorage.getItem('staticLoginSuccess'); // Check if static login succeeded
-
-            if (storedStaticLogin) {
-                if (storedDiscordName && userId) {
-                    discordUsername = storedDiscordName;
-                    initDashboard();
-                    showScreen('dashboard-screen');
-                } else {
-                    showScreen('discord-prompt-screen');
-                }
-            } else {
-                showScreen('login-screen');
-            }
-        }
-
-        document.getElementById('loginForm').addEventListener('submit', function(event) {
-            event.preventDefault();
-            const usernameInput = document.getElementById('username').value;
-            const passwordInput = document.getElementById('password').value;
-            const loginError = document.getElementById('loginError');
-
-            if (usernameInput === REQUIRED_USERNAME && passwordInput === REQUIRED_PASSWORD) {
-                loginError.style.display = 'none';
-                sessionStorage.setItem('staticLoginSuccess', 'true'); // Mark static login as successful
-                showScreen('discord-prompt-screen');
-            } else {
-                loginError.style.display = 'block';
-                document.getElementById('password').value = ''; 
-            }
-        });
-
-        // --- DISCORD NAME PROMPT ---
-        document.getElementById('discordPromptForm').addEventListener('submit', function(event) {
-            event.preventDefault();
-            const inputName = document.getElementById('discordUsername').value.trim();
-            if (inputName) {
-                discordUsername = inputName;
-                sessionStorage.setItem('discordUsername', discordUsername);
-                initDashboard();
-                showScreen('dashboard-screen');
-            }
-        });
-
-        // --- DASHBOARD INITIALIZATION ---
-        function initDashboard() {
-            document.getElementById('display-discord-username').textContent = discordUsername;
-            document.getElementById('display-user-id').textContent = userId;
-
-            // Start listening for real-time data
-            listenForShifts();
-            listenForModLogs();
-            renderShiftButtons(); // Initialize shift buttons
-            switchTab('shifts'); // Set default tab to Shifts
-        }
-
-        function logout() {
-            signOut(auth).then(() => {
-                sessionStorage.removeItem('discordUsername');
-                sessionStorage.removeItem('staticLoginSuccess');
-                discordUsername = null;
-                // Clean up UI and show login
-                document.getElementById('username').value = '';
-                document.getElementById('password').value = '';
-                showScreen('login-screen');
-            }).catch((error) => {
-                console.error("Logout error:", error);
-            });
-        }
-
-
-        // ===============================================
-        // SHIFT LOGIC (Public Collection)
-        // ===============================================
-
-        const getShiftDocRef = (uid) => doc(db, `/artifacts/${appId}/public/data/shifts`, uid);
-
-        async function updateShiftStatus(newStatus) {
-            if (!userId || !discordUsername) return console.error("User not logged in or Discord name missing.");
-
-            const timestamp = serverTimestamp();
-            const shiftData = {
-                discordUsername: discordUsername,
-                status: newStatus,
-                lastActionTime: timestamp,
-            };
-
-            await setDoc(getShiftDocRef(userId), shiftData, { merge: true });
+            const data = await response.json();
             
-            // Re-render buttons and status display immediately
-            currentShiftStatus = newStatus;
-            renderShiftButtons();
-            renderShiftStatusDisplay();
+            // Display the AI's answer, which is bolded by the .answer-text CSS
+            outputElement.innerHTML = `The answer is: <span style="color: #007bff;">${data.answer}</span>`;
+
+        } catch (error) {
+            console.error('Error fetching data:', error);
+            outputElement.innerHTML = `The answer is: <span style="color: red;">Failed to connect to the AI solver. Make sure your Python 'app.py' server is running.</span>`;
+        } finally {
+            submitButton.disabled = false; // Re-enable the button
         }
+    }
+</script>
 
-        function renderShiftStatusDisplay() {
-            const displayEl = document.getElementById('shift-status-display');
-            let color, statusText;
-
-            switch (currentShiftStatus) {
-                case 'Active':
-                    color = 'bg-shift-active/20 text-shift-active';
-                    statusText = 'ON DUTY';
-                    break;
-                case 'Break':
-                    color = 'bg-mod-kick/20 text-mod-kick';
-                    statusText = 'ON BREAK';
-                    break;
-                default:
-                    color = 'bg-shift-offline/20 text-shift-offline';
-                    statusText = 'OFFLINE';
-                    break;
-            }
-            displayEl.className = `text-center p-4 rounded-lg mb-4 ${color}`;
-            displayEl.innerHTML = `<p class="text-sm font-medium text-gray-800">Your Status</p><p class="text-3xl font-extrabold">${statusText}</p>`;
-        }
-
-        function renderShiftButtons() {
-            const buttonsEl = document.getElementById('shift-buttons');
-            buttonsEl.innerHTML = ''; // Clear existing buttons
-            const baseClass = "w-full py-3 font-bold rounded-lg transition shadow-md";
-
-            if (currentShiftStatus === 'Offline') {
-                buttonsEl.innerHTML += `<button onclick="updateShiftStatus('Active')" class="${baseClass} bg-shift-active text-white hover:bg-green-700">Start Shift</button>`;
-            } else if (currentShiftStatus === 'Active') {
-                buttonsEl.innerHTML += `<button onclick="updateShiftStatus('Break')" class="${baseClass} bg-mod-kick text-white hover:bg-yellow-700">Start Break</button>`;
-                buttonsEl.innerHTML += `<button onclick="updateShiftStatus('Offline')" class="${baseClass} bg-gray-500 text-white hover:bg-gray-600">End Shift</button>`;
-            } else if (currentShiftStatus === 'Break') {
-                buttonsEl.innerHTML += `<button onclick="updateShiftStatus('Active')" class="${baseClass} bg-shift-active text-white hover:bg-green-700">Return to Duty</button>`;
-                buttonsEl.innerHTML += `<button onclick="updateShiftStatus('Offline')" class="${baseClass} bg-gray-500 text-white hover:bg-gray-600">End Shift</button>`;
-            }
-        }
-
-        function listenForShifts() {
-            const shiftsRef = collection(db, `/artifacts/${appId}/public/data/shifts`);
-            const q = query(shiftsRef);
-            
-            onSnapshot(q, (snapshot) => {
-                const shifts = [];
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    if (data.status !== 'Offline') {
-                        shifts.push({ id: doc.id, ...data });
-                    }
-                    // Update current user's status display if available
-                    if (doc.id === userId) {
-                        currentShiftStatus = data.status;
-                        renderShiftStatusDisplay();
-                        renderShiftButtons();
-                    }
-                });
-                
-                // Sort by last action time (most recent first)
-                shifts.sort((a, b) => (b.lastActionTime?.toMillis() || 0) - (a.lastActionTime?.toMillis() || 0));
-                
-                renderActiveShiftsList(shifts);
-            }, (error) => {
-                console.error("Error listening to shifts:", error);
-            });
-        }
-
-        function renderActiveShiftsList(shifts) {
-            const listEl = document.getElementById('active-shifts-list');
-            listEl.innerHTML = '';
-            
-            if (shifts.length === 0) {
-                listEl.innerHTML = '<p class="text-gray-500 p-2 border border-gray-200 rounded-lg text-center">No staff currently active.</p>';
-                return;
-            }
-
-            shifts.forEach(shift => {
-                let statusColor, statusBadge;
-
-                if (shift.status === 'Active') {
-                    statusColor = 'bg-shift-active/20 text-shift-active border-shift-active';
-                    statusBadge = 'On Duty';
-                } else if (shift.status === 'Break') {
-                    statusColor = 'bg-mod-kick/20 text-mod-kick border-mod-kick';
-                    statusBadge = 'On Break';
-                }
-
-                const lastAction = shift.lastActionTime ? new Date(shift.lastActionTime.toMillis()).toLocaleTimeString() : 'N/A';
-
-                listEl.innerHTML += `
-                    <div class="p-3 rounded-lg border-l-4 ${statusColor} flex justify-between items-center shadow-sm">
-                        <div class="flex flex-col">
-                            <span class="font-bold">${shift.discordUsername}</span>
-                            <span class="text-xs text-gray-500">Action: ${lastAction}</span>
-                        </div>
-                        <span class="text-sm font-semibold p-1 px-3 rounded-full bg-white border border-current">${statusBadge}</span>
-                    </div>
-                `;
-            });
-        }
-
-
-        // ===============================================
-        // MODERATION LOGIC (Public Collection)
-        // ===============================================
-
-        document.getElementById('modLogForm').addEventListener('submit', async function(event) {
-            event.preventDefault();
-            
-            if (!userId || !discordUsername) return console.error("User not authenticated.");
-
-            const actionType = document.getElementById('actionType').value;
-            const targetUser = document.getElementById('targetUser').value.trim();
-            const reason = document.getElementById('reason').value.trim();
-
-            if (!actionType || !targetUser || !reason) {
-                // Using a custom method instead of alert
-                showTemporaryMessage("All fields (Action, Target User, Reason) are required.", 'red');
-                return;
-            }
-
-            const modLogRef = collection(db, `/artifacts/${appId}/public/data/mod_logs`);
-
-            try {
-                await addDoc(modLogRef, {
-                    actionType: actionType,
-                    targetUser: targetUser,
-                    reason: reason,
-                    staffUserId: userId,
-                    staffDiscordUsername: discordUsername,
-                    timestamp: serverTimestamp()
-                });
-
-                // Clear the form on successful submission
-                document.getElementById('modLogForm').reset();
-                showTemporaryMessage(`Successfully logged ${actionType} against ${targetUser}.`, 'green');
-
-            } catch (error) {
-                console.error("Error logging moderation action:", error);
-                showTemporaryMessage(`Failed to log action: ${error.message}`, 'red');
-            }
-        });
-
-        function showTemporaryMessage(message, color) {
-            const appContainer = document.getElementById('app-container');
-            let messageBox = document.getElementById('temp-message-box');
-
-            if (!messageBox) {
-                messageBox = document.createElement('div');
-                messageBox.id = 'temp-message-box';
-                messageBox.className = 'fixed top-4 right-4 p-4 rounded-lg shadow-xl text-white font-semibold z-50 transition-opacity duration-300';
-                appContainer.appendChild(messageBox);
-            }
-
-            messageBox.style.backgroundColor = color === 'red' ? '#d32f2f' : '#4caf50';
-            messageBox.textContent = message;
-            messageBox.style.opacity = '1';
-            messageBox.classList.remove('hidden');
-
-            setTimeout(() => {
-                messageBox.style.opacity = '0';
-                setTimeout(() => {
-                    messageBox.classList.add('hidden');
-                }, 300);
-            }, 3000);
-        }
-
-        function listenForModLogs() {
-            const modLogRef = collection(db, `/artifacts/${appId}/public/data/mod_logs`);
-            const q = query(modLogRef); 
-            
-            onSnapshot(q, (snapshot) => {
-                let logs = [];
-                snapshot.forEach(doc => {
-                    logs.push({ id: doc.id, ...doc.data() });
-                });
-
-                // Sort by timestamp in descending order (most recent first)
-                logs.sort((a, b) => (b.timestamp?.toMillis() || 0) - (a.timestamp?.toMillis() || 0));
-                
-                renderRecentModLogs(logs.slice(0, 10)); // Show only the 10 most recent
-            }, (error) => {
-                console.error("Error listening to moderation logs:", error);
-            });
-        }
-
-        function renderRecentModLogs(logs) {
-            const listEl = document.getElementById('recent-mod-logs');
-            listEl.innerHTML = '';
-
-            if (logs.length === 0) {
-                listEl.innerHTML = '<p class="text-gray-500 p-2 border border-gray-200 rounded-lg text-center">No moderation actions recorded yet.</p>';
-                return;
-            }
-
-            logs.forEach(log => {
-                let color, actionText;
-
-                switch (log.actionType) {
-                    case 'Ban':
-                        color = 'bg-mod-ban/20 text-mod-ban border-mod-ban';
-                        actionText = 'BAN';
-                        break;
-                    case 'Kick':
-                        color = 'bg-mod-kick/20 text-mod-kick border-mod-kick';
-                        actionText = 'KICK';
-                        break;
-                    case 'Warn':
-                        color = 'bg-mod-warn/20 text-mod-warn border-mod-warn';
-                        actionText = 'WARN';
-                        break;
-                    default:
-                        color = 'bg-gray-200 text-gray-700 border-gray-400';
-                        actionText = 'ACTION';
-                }
-
-                const logTime = log.timestamp ? new Date(log.timestamp.toMillis()).toLocaleTimeString() : 'N/A';
-
-                listEl.innerHTML += `
-                    <div class="p-3 rounded-lg border-l-4 ${color} shadow-sm">
-                        <div class="flex justify-between items-start">
-                            <span class="font-bold text-sm">${log.targetUser}</span>
-                            <span class="text-xs font-semibold p-1 px-2 rounded-full bg-white border border-current">${actionText}</span>
-                        </div>
-                        <p class="text-xs mt-1 italic text-gray-700 overflow-hidden text-ellipsis whitespace-nowrap">Reason: ${log.reason}</p>
-                        <p class="text-xs mt-1 text-right text-gray-500">by ${log.staffDiscordUsername} at ${logTime}</p>
-                    </div>
-                `;
-            });
-        }
-
-        // Expose functions globally for HTML buttons
-        window.updateShiftStatus = updateShiftStatus;
-        window.logout = logout;
-
-        // Initialize everything on load
-        window.onload = initializeFirebase;
-    </script>
 </body>
 </html>
