@@ -1,7 +1,7 @@
 import os
-import io # <-- NEW: For handling image data in memory
-import base64 # <-- NEW: For decoding the Base64 image string
-from PIL import Image # <-- NEW: For creating the image object
+import io
+import base64
+from PIL import Image
 from flask import Flask, request, jsonify, render_template, redirect, url_for, session
 from google import genai
 from google.genai.errors import APIError
@@ -31,6 +31,7 @@ VALID_PASSWORD = os.getenv("LOGIN_PASSWORD")
 
 @app.route('/')
 def index():
+    """Renders the main solver page if logged in, otherwise redirects to login."""
     if 'logged_in' not in session or not session['logged_in']:
         return redirect(url_for('login'))
     
@@ -38,6 +39,7 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    """Handles the user login form."""
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -53,43 +55,48 @@ def login():
 
 @app.route('/solve', methods=['POST'])
 def solve_query():
+    """Handles the user's query by sending it to the Gemini API."""
     if 'logged_in' not in session or not session['logged_in']:
         return jsonify({"answer": "Access Denied. Please log in first."}), 401
         
     data = request.get_json()
     user_query = data.get('query', '').strip()
-    image_data_b64 = data.get('image_data') # <-- Get Base64 image string
+    image_data_b64 = data.get('image_data')
 
-    # Check for empty input (must have text OR image)
     if not user_query and not image_data_b64:
         return jsonify({"answer": "Please enter a question or upload an image."})
 
     # --- 1. Prepare Content for Gemini ---
     content = []
     
-    # If image data exists, decode it
     if image_data_b64:
         try:
-            # Decode the base64 string into bytes
             image_bytes = base64.b64decode(image_data_b64)
-            # Create a PIL Image object from the bytes
             img = Image.open(io.BytesIO(image_bytes))
             
-            # Add the image object to the content list
             content.append(img)
         except Exception as e:
             print(f"Image Decoding Error: {e}")
             return jsonify({"answer": "Error processing image. Is it a valid image file?"})
 
-    # If there is a text query, add it to the content list
     if user_query:
         content.append(user_query)
+    
+    # --- 2. Define System Instruction (To enforce concise answers) ---
+    system_instruction = (
+        "You are a concise, final answer solver. "
+        "When presented with a question, especially a math problem, "
+        "respond only with the final answer. "
+        "Do not include step-by-step reasoning, introductory phrases, or concluding sentences. "
+        "If the answer is a mathematical expression, use the correct LaTeX formatting (e.g., \\boxed{\\text{your answer}})."
+    )
 
     try:
-        # Use the same model for multimodal requests
+        # Call the Gemini API with the new instruction
         response = client.models.generate_content(
             model='gemini-2.5-flash',
-            contents=content # This list can contain [Image, Text] or just [Text]
+            contents=content,
+            system_instruction=system_instruction
         )
         ai_answer = response.text.strip()
         return jsonify({"answer": ai_answer})
@@ -103,6 +110,7 @@ def solve_query():
 
 @app.route('/logout')
 def logout():
+    """Removes the logged_in flag from the session."""
     session.pop('logged_in', None)
     return redirect(url_for('login'))
 

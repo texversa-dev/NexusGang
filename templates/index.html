@@ -6,7 +6,8 @@
     <title>AI Solver (Multimodal)</title>
     <style>
         body {
-            background-color: #cccccc; 
+            /* Black background color */
+            background-color: #000000; 
             font-family: Arial, sans-serif;
             display: flex;
             justify-content: center;
@@ -42,9 +43,9 @@
         /* Image Preview Area */
         #image-preview {
             max-width: 100%;
-            max-height: 150px; /* Constrain size */
+            max-height: 150px;
             margin-top: 10px;
-            display: none; /* Hidden by default */
+            display: none;
             border-radius: 8px;
             object-fit: contain;
         }
@@ -135,22 +136,19 @@
     const placeholderText = document.getElementById('placeholder-text');
     const submitButton = document.getElementById('submit-button');
 
-    let base64Image = null; // Variable to hold the image data
+    let base64Image = null; 
 
     // --- Image Preview Logic ---
     function previewImage(event) {
         const file = event.target.files[0];
-        base64Image = null; // Reset image data
+        base64Image = null; 
 
         if (file) {
-            // Display preview
             const reader = new FileReader();
             reader.onload = function(e) {
                 imagePreview.src = e.target.result;
                 imagePreview.style.display = 'block';
                 
-                // Store Base64 data for sending to the server
-                // We remove the "data:image/jpeg;base64," prefix for clean transport
                 base64Image = e.target.result.split(',')[1]; 
             };
             reader.readAsDataURL(file);
@@ -169,19 +167,18 @@
         const userInput = inputArea.textContent.trim();
         
         if (!userInput && !base64Image) {
-            outputElement.innerHTML = `The answer is: <span style="color: red;">Please enter a query and/or an image.</span>`;
+            outputElement.innerHTML = `<span style="color: red;">Please enter a query and/or an image.</span>`;
             return;
         }
 
         // Show loading message
-        outputElement.innerHTML = `The answer is: <span style="color: #666;">Thinking... (Waiting for Gemini Vision)</span>`;
+        outputElement.innerHTML = `<span style="color: #666;">Thinking... (Waiting for Gemini Vision)</span>`;
         submitButton.disabled = true;
 
         try {
-            // Build the JSON payload
             const payload = {
                 query: userInput,
-                image_data: base64Image // Send null if no image, or the Base64 string
+                image_data: base64Image
             };
 
             const response = await fetch('/solve', {
@@ -195,16 +192,19 @@
             const data = await response.json();
             
             if (!response.ok) {
-                throw new Error(data.answer || `Server error! Status: ${response.status}`);
+                // Error messages remain red for visibility
+                throw new Error(`<span style="color: red;">${data.answer || `Server error! Status: ${response.status}`}</span>`);
             }
             
-            outputElement.innerHTML = `The answer is: <span style="color: #007bff;">${data.answer}</span>`;
+            // KEY CHANGE: Display the successful AI answer as raw text, no custom color
+            outputElement.innerHTML = data.answer;
 
         } catch (error) {
             console.error('Error fetching data:', error);
-            outputElement.innerHTML = `The answer is: <span style="color: red;">${error.message || "Failed to connect to the server."}</span>`;
+            // Display error message
+            outputElement.innerHTML = error.message;
         } finally {
-            submitButton.disabled = false; // Re-enable the button
+            submitButton.disabled = false;
         }
     }
 </script>
