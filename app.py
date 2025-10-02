@@ -1,7 +1,4 @@
 import os
-import io
-import base64
-from PIL import Image
 from flask import Flask, request, jsonify, render_template, redirect, url_for, session
 from google import genai
 from google.genai.errors import APIError
@@ -61,39 +58,24 @@ def solve_query():
         
     data = request.get_json()
     user_query = data.get('query', '').strip()
-    image_data_b64 = data.get('image_data')
 
-    if not user_query and not image_data_b64:
-        return jsonify({"answer": "Please enter a question or upload an image."})
+    if not user_query:
+        return jsonify({"answer": "Please enter a question."})
 
-    # --- 1. Prepare Content for Gemini ---
-    content = []
+    # --- 1. Prepare Content for Gemini (Text-Only) ---
+    content = [user_query]
     
-    if image_data_b64:
-        try:
-            # Decode the base64 string and create a PIL Image object
-            image_bytes = base64.b64decode(image_data_b64)
-            img = Image.open(io.BytesIO(image_bytes))
-            
-            content.append(img)
-        except Exception as e:
-            print(f"Image Decoding Error: {e}")
-            return jsonify({"answer": "Error processing image. Is it a valid image file?"})
-
-    if user_query:
-        content.append(user_query)
-    
-    # --- 2. Define System Instruction & Config (REFINED FOR SYMBOLS) ---
+    # --- 2. Define System Instruction & Config (ULTIMATE CONCISENESS) ---
     system_instruction = (
         "You are a concise, final answer solver. "
         "When presented with a question, especially a math problem, "
-        "respond only with the final answer. "
+        "respond only with the final answer as a raw mathematical expression. "
         "Do not include step-by-step reasoning, introductory phrases, or concluding sentences. "
         "Crucially, use proper mathematical symbols (e.g., +, -, \\times, \\div, \^ or exponents) for all operations. "
-        "The final answer must be enclosed in LaTeX formatting, for example: \\boxed{\\text{your answer}}."
+        "Do NOT use the \\boxed{} command. Use standard parentheses () instead of curly braces {} for grouping."
     )
 
-    # FIX: Use the 'config' dictionary to pass system instructions
+    # Use the 'config' dictionary to pass system instructions
     config = {
         "system_instruction": system_instruction
     }
@@ -103,7 +85,7 @@ def solve_query():
         response = client.models.generate_content(
             model='gemini-2.5-flash',
             contents=content,
-            config=config  # Corrected parameter name
+            config=config
         )
         ai_answer = response.text.strip()
         return jsonify({"answer": ai_answer})
