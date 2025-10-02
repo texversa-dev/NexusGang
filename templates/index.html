@@ -26,39 +26,18 @@
             text-align: center;
         }
 
-        h2 { margin-bottom: 10px; }
+        h2 { margin-bottom: 20px; }
         
         /* --- Input Area Styling --- */
         #input-area {
             border: 2px dashed #999;
             border-radius: 10px; 
             padding: 20px;
-            margin-bottom: 10px;
+            margin-bottom: 20px; /* Increased margin for better spacing */
             min-height: 50px;
             font-style: italic;
             color: #666;
             text-align: center;
-        }
-
-        /* Image Preview Area */
-        #image-preview {
-            max-width: 100%;
-            max-height: 150px;
-            margin-top: 10px;
-            display: none;
-            border-radius: 8px;
-            object-fit: contain;
-        }
-
-        #file-input-label {
-            display: block;
-            margin-bottom: 20px;
-            padding: 8px 15px;
-            background-color: #f0f0f0;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.9em;
         }
 
         #submit-button {
@@ -108,14 +87,10 @@
 <div class="container">
     <h2>Access Blocked</h2>
 
-    <div id="input-area" contenteditable="true" placeholder="Describe the image, or ask a question about it.">
-        <p id="placeholder-text">Ask a question (text or about the image).</p>
+    <div id="input-area" contenteditable="true" placeholder="Ask a math or science question.">
+        <p id="placeholder-text">Ask a question here.</p>
     </div>
     
-    <input type="file" id="image-file-input" accept="image/*" style="display: none;" onchange="previewImage(event)">
-    <label for="image-file-input" id="file-input-label">Click to Upload Image (Optional)</label>
-    <img id="image-preview" src="#" alt="Image Preview">
-
     <button id="submit-button" onclick="getAnswer()">Get Answer</button>
 
     <div id="answer-area">
@@ -129,56 +104,34 @@
 </div>
 
 <script>
+    // NOTE: Image elements and logic removed
     const inputArea = document.getElementById('input-area');
-    const imageInput = document.getElementById('image-file-input');
-    const imagePreview = document.getElementById('image-preview');
     const outputElement = document.getElementById('answer-output');
     const placeholderText = document.getElementById('placeholder-text');
     const submitButton = document.getElementById('submit-button');
-
-    let base64Image = null; 
-
-    // --- Image Preview Logic ---
-    function previewImage(event) {
-        const file = event.target.files[0];
-        base64Image = null; 
-
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                imagePreview.src = e.target.result;
-                imagePreview.style.display = 'block';
-                
-                base64Image = e.target.result.split(',')[1]; 
-            };
-            reader.readAsDataURL(file);
-        } else {
-            imagePreview.style.display = 'none';
-        }
-    }
-
+    
     // Focus handler
     inputArea.addEventListener('focus', () => {
         if (placeholderText) placeholderText.style.display = 'none';
     });
     
-    // --- MAIN AI LOGIC: Sends Query to Flask Server ---
+    // --- MAIN AI LOGIC: Sends Query to Flask Server (Text-Only) ---
     async function getAnswer() {
         const userInput = inputArea.textContent.trim();
         
-        if (!userInput && !base64Image) {
-            outputElement.innerHTML = `<span style="color: red;">Please enter a query and/or an image.</span>`;
+        if (!userInput) {
+            outputElement.innerHTML = `<span style="color: red;">Please enter a question.</span>`;
             return;
         }
 
         // Show loading message
-        outputElement.innerHTML = `<span style="color: #666;">Thinking... (Waiting for Gemini Vision)</span>`;
+        outputElement.innerHTML = `<span style="color: #666;">Thinking...</span>`;
         submitButton.disabled = true;
 
         try {
             const payload = {
-                query: userInput,
-                image_data: base64Image
+                query: userInput
+                // NOTE: image_data removed
             };
 
             const response = await fetch('/solve', {
@@ -196,7 +149,7 @@
                 throw new Error(`<span style="color: red;">${data.answer || `Server error! Status: ${response.status}`}</span>`);
             }
             
-            // KEY CHANGE: Display the successful AI answer as raw text, no custom color
+            // Display the successful AI answer as raw text, no custom color
             outputElement.innerHTML = data.answer;
 
         } catch (error) {
