@@ -71,6 +71,7 @@ def solve_query():
     
     if image_data_b64:
         try:
+            # Decode the base64 string and create a PIL Image object
             image_bytes = base64.b64decode(image_data_b64)
             img = Image.open(io.BytesIO(image_bytes))
             
@@ -82,13 +83,14 @@ def solve_query():
     if user_query:
         content.append(user_query)
     
-    # --- 2. Define System Instruction & Config (FIXED FOR MODERN SDK) ---
+    # --- 2. Define System Instruction & Config (REFINED FOR SYMBOLS) ---
     system_instruction = (
         "You are a concise, final answer solver. "
         "When presented with a question, especially a math problem, "
         "respond only with the final answer. "
         "Do not include step-by-step reasoning, introductory phrases, or concluding sentences. "
-        "If the answer is a mathematical expression, use the correct LaTeX formatting (e.g., \\boxed{\\text{your answer}})."
+        "Crucially, use proper mathematical symbols (e.g., +, -, \\times, \\div, \^ or exponents) for all operations. "
+        "The final answer must be enclosed in LaTeX formatting, for example: \\boxed{\\text{your answer}}."
     )
 
     # FIX: Use the 'config' dictionary to pass system instructions
@@ -101,7 +103,7 @@ def solve_query():
         response = client.models.generate_content(
             model='gemini-2.5-flash',
             contents=content,
-            config=config  # <-- Corrected parameter name
+            config=config  # Corrected parameter name
         )
         ai_answer = response.text.strip()
         return jsonify({"answer": ai_answer})
