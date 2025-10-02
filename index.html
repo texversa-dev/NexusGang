@@ -6,7 +6,7 @@
     <title>AI Solver (Powered by Gemini & Flask)</title>
     <style>
         body {
-            /* Gray background color */
+            /* Gray background color: #cccccc */
             background-color: #cccccc; 
             font-family: Arial, sans-serif;
             display: flex;
@@ -80,12 +80,19 @@
             font-size: 1.2em;
             color: #1a1a1a;
         }
+
+        .logout-link {
+            display: block;
+            margin-top: 15px;
+            font-size: 0.9em;
+            color: #555;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Enter Your Query or Equation</h2>
+    <h2>AI Solver</h2>
 
     <div id="input-area" contenteditable="true" placeholder="Type complex algebra, history questions, or random facts here.">
         <p id="placeholder-text">Type your question here (e.g., "Who invented calculus?" or "3x + 5 = 14").</p>
@@ -98,6 +105,9 @@
             The answer will appear here.
         </p>
     </div>
+    
+    <a href="{{ url_for('logout') }}" class="logout-link">Log Out</a>
+
 </div>
 
 <script>
@@ -128,7 +138,7 @@
         }
 
         // Show a loading message and disable button
-        outputElement.innerHTML = `The answer is: <span style="color: #666;">Thinking... (Waiting for Python Server)</span>`;
+        outputElement.innerHTML = `The answer is: <span style="color: #666;">Thinking... (Waiting for AI)</span>`;
         submitButton.disabled = true;
 
         try {
@@ -142,7 +152,9 @@
             });
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                // If the server returns a 401 Unauthorized or other error
+                const errorData = await response.json();
+                throw new Error(errorData.answer || `HTTP error! Status: ${response.status}`);
             }
 
             const data = await response.json();
@@ -152,7 +164,8 @@
 
         } catch (error) {
             console.error('Error fetching data:', error);
-            outputElement.innerHTML = `The answer is: <span style="color: red;">Failed to connect to the AI solver. Make sure your Python 'app.py' server is running.</span>`;
+            // Display any error message received from the server
+            outputElement.innerHTML = `The answer is: <span style="color: red;">${error.message || "Failed to connect to the server."}</span>`;
         } finally {
             submitButton.disabled = false; // Re-enable the button
         }
