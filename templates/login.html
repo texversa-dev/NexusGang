@@ -3,72 +3,390 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Access Blocked</title>
+    <title>Tactical Profile Card</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SPOT 4: Firebase Imports (Firestore & Auth) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables for Firebase access
+        window.firebase = {
+            initializeApp,
+            getAuth, signInAnonymously, signInWithCustomToken,
+            getFirestore, doc, getDoc, setDoc, updateDoc, increment, runTransaction
+        };
+    </script>
+
+    <!-- Configure Tailwind for the dark, pink-accent theme -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-dark': '#0A0A0A',  // Main background black
+                        'card-dark': '#1A1A1A',     // Dark gray for card body
+                        'accent-hot-pink': '#FF69B4',    // Hot Pink for accents (high contrast)
+                        'accent-gray': '#E0E0E0',   // Light gray for text
+                        'status-light-pink': '#FFB6C1'   // Light Pink for online status glow
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        // Sharp, aggressive pink glow
+                        'glitch': '0 0 10px #FF69B4, 0 0 20px rgba(255, 105, 180, 0.5), 0 0 30px rgba(255, 105, 180, 0.3)',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Custom CSS for background -->
     <style>
-        body {
-            /* Black background color */
-            background-color: #000000;
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        
+        /* The image background for the whole page */
+        #background-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover; 
+            background-position: center;
+            filter: brightness(0.4) contrast(1.5);
+            z-index: -2;
         }
-        .container {
-            background-color: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            width: 90%;
-            max-width: 400px;
-            text-align: center;
+
+        /* Custom style for link buttons */
+        .link-button {
+            transition: all 0.2s;
+            box-shadow: 0 0 5px rgba(255, 105, 180, 0.5);
         }
-        h2 {
-            margin-bottom: 25px;
-            font-weight: bold;
+
+        .link-button:hover {
+            box-shadow: 0 0 15px #FF69B4;
+            transform: translateY(-2px);
         }
-        input[type="text"], input[type="password"] {
-            width: calc(100% - 20px);
-            padding: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #aaa;
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-size: 1em;
-        }
-        input[type="submit"] {
-            padding: 10px 20px;
-            background-color: #333333;
-            color: white;
-            border: none;
-            cursor: pointer;
-            border-radius: 8px;
-            font-size: 1em;
-            font-weight: bold;
-            transition: background-color 0.2s;
-        }
-        input[type="submit"]:hover {
-            background-color: #555555;
-        }
-        .error {
-            color: red;
-            font-weight: bold;
-            margin-bottom: 15px;
+
+        /* Custom style for the fixed message box (replacing alert) */
+        #message-box {
+            position: fixed;
+            top: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 50;
         }
     </style>
 </head>
-<body>
-<div class="container">
-    <h2>Access Blocked</h2>
-    {% if error %}
-        <p class="error">{{ error }}</p>
-    {% endif %}
-    <form method="POST">
-        <input type="text" name="username" placeholder="Username" required>
-        <input type="password" name="password" placeholder="Password" required>
-        <input type="submit" value="Log In">
-    </form>
-</div>
+<body class="bg-primary-dark flex items-center justify-center min-h-screen p-4 font-sans relative">
+
+    <!-- Background Image Container -->
+    <div id="background-container"></div>
+    
+    <!-- Floating Particles Container (Empty now, but kept for JS compatibility if needed later) -->
+    <div id="particles-container" class="absolute inset-0 z-[-1]"></div>
+
+    <!-- SPOT 2: Background Music Audio Element -->
+    <audio id="background-audio" loop preload="auto">
+        <!-- Updated to a public domain lo-fi jazz track to match the Laufey style -->
+        <source src="https://cdn.pixabay.com/download/audio/2023/12/11/audio_4abf960f85.mp3?filename=lo-fi-hip-hop-209592.mp3" type="audio/mp3">
+        Your browser does not support the audio element.
+    </audio>
+    <!-- SPOT 8: Music Play Button (Fallback for Autoplay restrictions) -->
+    <button id="play-music-button" class="fixed top-2 right-2 p-2 bg-accent-hot-pink text-primary-dark font-bold text-sm rounded-lg shadow-lg z-20 hidden">
+        ▶️ Start Music
+    </button>
+    <!-- Message Box for notifications (e.g., music start success/failure) -->
+    <div id="message-box" class="p-3 bg-card-dark text-accent-gray rounded-lg shadow-glitch border border-accent-hot-pink/50 transition-opacity duration-300 opacity-0 pointer-events-none"></div>
+
+    <!-- Main Profile Card -->
+    <div id="profile-card" class="relative w-full max-w-sm mx-auto p-6 md:p-8 bg-card-dark/90 backdrop-blur-md rounded-lg shadow-glitch border border-accent-hot-pink/50 transition-all duration-300">
+        
+        <!-- Large Profile Image -->
+        <div class="flex justify-center mb-6">
+            <div class="relative w-32 h-32 rounded-full p-1 bg-gradient-to-tr from-gray-700 to-accent-hot-pink shadow-glitch">
+                <!-- Image uses object-cover to fit perfectly, styled for a tactical/dark look -->
+                <img id="main-profile-pic" src="https://placehold.co/120x120/1A1A1A/FFFFFF?text=PFP" alt="Profile Picture" class="w-full h-full object-cover rounded-full filter brightness-125 contrast-150" onerror="handleImageError(this)">
+                <div class="absolute inset-0 rounded-full border-2 border-accent-hot-pink/40"></div>
+            </div>
+        </div>
+
+        <!-- Username -->
+        <div class="text-center mb-4">
+            <span id="profile-name" class="text-4xl font-black text-accent-hot-pink uppercase tracking-widest drop-shadow-xl">Gamer_TAG</span>
+        </div>
+
+        <!-- State/Status Emoji -->
+        <div class="text-center mb-8">
+            <span id="state-emoji" class="text-4xl" role="img" aria-label="Status">💖</span>
+        </div>
+
+        <!-- Small Status Block (Online/Offline indicator) -->
+        <div class="flex justify-center mb-10">
+            <div class="flex items-center space-x-3 p-3 bg-black/40 border border-accent-hot-pink/20 rounded-full shadow-inner">
+                <!-- Small Profile Image -->
+                <img id="mini-profile-pic" src="https://placehold.co/40x40/1A1A1A/FFFFFF?text=PFP" alt="Mini Profile" class="w-10 h-10 object-cover rounded-full filter brightness-125 contrast-150" onerror="handleImageError(this)">
+                
+                <div class="text-left">
+                    <div class="flex items-center space-x-2">
+                        <span id="mini-profile-name" class="text-sm font-semibold text-accent-gray">Gamer_TAG</span>
+                        <!-- Online Status Indicator (Now Light Pink) -->
+                        <div class="w-2 h-2 bg-status-light-pink rounded-full shadow-lg shadow-status-light-pink/60 animate-pulse"></div>
+                    </div>
+                    <span id="last-seen-time" class="text-xs text-gray-500">Currently in-game</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- App Icons / Status Icons (Kept for visual flair) -->
+        <div class="flex justify-center space-x-6 mb-8">
+            <!-- Controller Icon (In-Game Status) -->
+            <div class="w-10 h-10 bg-black/30 rounded-lg flex items-center justify-center border border-accent-hot-pink/50 shadow-md transition duration-150 cursor-pointer" title="Playing a Game">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-accent-hot-pink" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3h2l2 2v2h2l2 2v2h-2v2h-2v2h-2v2h-2v-2h-2v-2h-2v-2h-2v-2l2-2h2V5l2-2z" />
+                </svg>
+            </div>
+            <!-- Headphones Icon (Listening to music) -->
+            <div class="w-10 h-10 bg-black/30 rounded-lg flex items-center justify-center border border-accent-hot-pink/50 shadow-md transition duration-150 cursor-pointer" title="Listening to Music">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-accent-gray" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5a2 2 0 01-2-2V7a2 2 0 012-2h14a2 2 0 012 2v2a2 2 0 01-2 2z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 20a8 8 0 01-8-8 8 8 0 018-8 8 8 0 018 8 8 8 0 01-8 8zM12 20v2m0-12v2" />
+                </svg>
+            </div>
+            <!-- Chat Icon (Available to Chat) -->
+            <div class="w-10 h-10 bg-black/30 rounded-lg flex items-center justify-center border border-accent-hot-pink/50 shadow-md transition duration-150 cursor-pointer" title="Available to Chat">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-status-light-pink" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V7a2 2 0 012-2h14a2 2 0 012 2v5a2 2 0 01-2 2h-5l-4 4v-4z" />
+                </svg>
+            </div>
+        </div>
+        
+        <!-- SPOT 3: Link Buttons Container -->
+        <div id="link-buttons-container" class="space-y-4 mb-4">
+            <!-- Dynamic Link Buttons will be injected here by JavaScript -->
+        </div>
+
+        <!-- View Count Footer -->
+        <div class="absolute bottom-4 left-4 flex items-center space-x-1 text-gray-500 text-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+            <span id="view-count">Loading...</span>
+        </div>
+    </div>
+    
+    <!-- SPOT 1: Removed Controls Panel HTML -->
+
+    <script type="module">
+        // SPOT 4: Firebase Initialization & Setup
+        const { initializeApp, getAuth, signInAnonymously, signInWithCustomToken, getFirestore, doc, updateDoc, increment, runTransaction } = window.firebase;
+        
+        // ** CONFIGURATION SECTION **
+        // SPOT 5: Profile Data - Edit these values to change your profile content
+        const TEXVERSA_IMAGE_URL = "https://cdn.discordapp.com/avatars/758739147443273789/4359991daaba7fe3adab2ed03ad108c4.webp";
+
+        const profileData = {
+            name: "TEXVERSA",
+            statusEmoji: "💖", // Updated to pink heart
+            statusText: "💗H O P E", // Updated status text
+            profilePicUrl: TEXVERSA_IMAGE_URL,
+            backgroundUrl: TEXVERSA_IMAGE_URL,
+        };
+
+        // SPOT 7: Link Buttons Data - Edit this array for your links
+        const linkData = [
+            // All links now use the Texversa image
+            { text: "My Community Discord", url: "https://discord.gg/Bn3SJTpwJF", icon: TEXVERSA_IMAGE_URL, isImage: true },
+            { text: "My Roblox Profile", url: "https://www.roblox.com/users/1515085030/profile", icon: TEXVERSA_IMAGE_URL, isImage: true },
+            { text: "Play Last Stand", url: "https://www.roblox.com/games/127099328892274/Last-Stand", icon: TEXVERSA_IMAGE_URL, isImage: true },
+        ];
+        
+        const VIEW_COUNT_DOC_ID = 'main-profile-views';
+
+        // Initialize Firebase App and Services
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        let db, auth;
+        let userId = 'anonymous'; // Default ID
+        
+        try {
+            const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+            
+            // Authenticate user
+            if (typeof __initial_auth_token !== 'undefined') {
+                await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+                await signInAnonymously(auth);
+            }
+            userId = auth.currentUser?.uid || crypto.randomUUID();
+        } catch (error) {
+            console.error("Firebase initialization failed:", error);
+            showUserMessage("Error: Could not connect to the database. View count may not update.", true);
+        }
+        
+        // --- Core Application Logic ---
+
+        const elements = {
+            profileName: document.getElementById('profile-name'),
+            miniProfileName: document.getElementById('mini-profile-name'),
+            stateEmoji: document.getElementById('state-emoji'),
+            lastSeenTime: document.getElementById('last-seen-time'),
+            viewCount: document.getElementById('view-count'),
+            mainProfilePic: document.getElementById('main-profile-pic'),
+            miniProfilePic: document.getElementById('mini-profile-pic'),
+            backgroundContainer: document.getElementById('background-container'),
+            linkButtonsContainer: document.getElementById('link-buttons-container'),
+            backgroundAudio: document.getElementById('background-audio'),
+            playMusicButton: document.getElementById('play-music-button'),
+            messageBox: document.getElementById('message-box')
+        };
+        
+        // Display user message in a fixed box (replacing alert/confirm)
+        function showUserMessage(message, isError = false) {
+            elements.messageBox.textContent = message;
+            // Update message box color scheme
+            elements.messageBox.className = `p-3 text-sm rounded-lg shadow-xl transition-opacity duration-300 opacity-100 pointer-events-auto ${isError ? 'bg-red-900 text-accent-hot-pink border border-accent-hot-pink' : 'bg-card-dark text-status-light-pink border border-status-light-pink'}`;
+            
+            setTimeout(() => {
+                elements.messageBox.classList.add('opacity-0');
+                elements.messageBox.classList.remove('pointer-events-auto');
+            }, 5000);
+        }
+
+        // SPOT 6: View Count Logic
+        async function incrementViewCount() {
+            if (!db) {
+                elements.viewCount.textContent = 'Offline';
+                return;
+            }
+            
+            // Use the public collection path: /artifacts/{appId}/public/data/profileViews/{VIEW_COUNT_DOC_ID}
+            const viewDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'profileViews', VIEW_COUNT_DOC_ID);
+
+            try {
+                // Use a transaction to safely increment the count and read the new value
+                await runTransaction(db, async (transaction) => {
+                    const viewDoc = await transaction.get(viewDocRef);
+                    let newCount = 1;
+
+                    if (viewDoc.exists()) {
+                        const currentCount = viewDoc.data().count || 0;
+                        newCount = currentCount + 1;
+                        transaction.update(viewDocRef, { count: newCount });
+                    } else {
+                        // Document doesn't exist, create it
+                        transaction.set(viewDocRef, { count: newCount, createdBy: userId });
+                    }
+                    elements.viewCount.textContent = newCount.toLocaleString();
+                });
+            } catch (e) {
+                console.error("View count update failed:", e);
+                elements.viewCount.textContent = 'Error';
+            }
+        }
+        
+        // SPOT 7: Function to generate and render link buttons (Now handles image and SVG icons)
+        function renderLinks() {
+            elements.linkButtonsContainer.innerHTML = ''; // Clear existing
+            
+            // Simple SVG icon for Roblox (Generic game/profile marker)
+            const robloxSvg = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-accent-hot-pink" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="4" ry="4"></rect>
+                    <circle cx="12" cy="12" r="4"></circle>
+                </svg>
+            `;
+
+            const getIconHtml = (link) => {
+                if (link.isImage) {
+                    return `<img src="${link.icon}" alt="${link.text} icon" class="w-6 h-6 object-contain rounded-md" onerror="handleImageError(this)">`;
+                }
+                if (link.icon === 'roblox-svg') {
+                    return robloxSvg;
+                }
+                // Default to large emoji/text icon
+                return `<span class="text-2xl">${link.icon}</span>`;
+            };
+
+            linkData.forEach(link => {
+                const button = document.createElement('a');
+                button.href = link.url;
+                button.target = '_blank';
+                button.rel = 'noopener noreferrer';
+                // Apply hot pink styling to buttons
+                button.className = 'link-button flex items-center justify-center w-full p-4 bg-accent-hot-pink/10 text-accent-gray font-semibold rounded-lg border border-accent-hot-pink/50 hover:bg-accent-hot-pink/20';
+                
+                const iconHtml = getIconHtml(link);
+                
+                // Use a container for the icon to ensure consistent sizing and centering
+                button.innerHTML = `<div class="w-6 h-6 mr-3 flex items-center justify-center">${iconHtml}</div><span>${link.text}</span>`;
+                elements.linkButtonsContainer.appendChild(button);
+            });
+        }
+
+        // SPOT 8: Music Play Function
+        function playMusic() {
+            const audioPromise = elements.backgroundAudio.play();
+            
+            if (audioPromise !== undefined) {
+                audioPromise.then(() => {
+                    // Autoplay started successfully
+                    elements.playMusicButton.style.display = 'none';
+                }).catch(() => {
+                    // Autoplay blocked, show the play button
+                    elements.playMusicButton.style.display = 'block';
+                    elements.playMusicButton.onclick = () => {
+                        elements.backgroundAudio.play()
+                            .then(() => {
+                                elements.playMusicButton.style.display = 'none';
+                                showUserMessage("Music started!", false);
+                            })
+                            .catch((e) => {
+                                console.error("Manual music play failed:", e);
+                                showUserMessage("Music blocked. Please check your browser settings.", true);
+                            });
+                    };
+                });
+            }
+        }
+
+        // Function to update the UI based on static profile data
+        const updateUI = () => {
+            // Update Text Content
+            elements.profileName.textContent = profileData.name;
+            elements.miniProfileName.textContent = profileData.name;
+            elements.stateEmoji.textContent = profileData.statusEmoji;
+            elements.lastSeenTime.textContent = profileData.statusText;
+
+            // Update Images
+            elements.mainProfilePic.src = profileData.profilePicUrl;
+            elements.miniProfilePic.src = profileData.profilePicUrl;
+
+            // Update Background
+            elements.backgroundContainer.style.backgroundImage = `url('${profileData.backgroundUrl}')`;
+        };
+        
+        // Function to handle image loading errors (fallbacks to a simple placeholder)
+        window.handleImageError = (imgElement) => {
+            // Updated error placeholder to match the dark pink theme
+            imgElement.src = `https://placehold.co/${imgElement.width}x${imgElement.height}/FF69B4/000000?text=ERR`;
+            console.error("Image failed to load:", imgElement.src);
+        };
+
+        // Initialize everything on load
+        window.onload = () => {
+            updateUI();
+            renderLinks();
+            incrementViewCount();
+            playMusic();
+        };
+
+    </script>
 </body>
 </html>
